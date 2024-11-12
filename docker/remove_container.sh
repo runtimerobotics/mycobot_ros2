@@ -1,6 +1,6 @@
 #!/bin/sh
 
-CONTAINER_NAME="nivo_systems_dev" #name of container which you created earlier, by running "create_container.sh" file.
+CONTAINER_NAME="mycobot_sim_container" #name of container which you created earlier, by running "create_container.sh" file.
 
 # Running the existing container
 

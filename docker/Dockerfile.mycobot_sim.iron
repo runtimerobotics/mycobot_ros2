@@ -69,6 +69,8 @@ RUN apt-get update && apt-get install -y \
     ros-$ROS_DISTRO-gazebo-ros \
     ros-$ROS_DISTRO-gazebo-ros2-control \
     ros-$ROS_DISTRO-gazebo-ros-pkgs \
+    ros-${ROS_DISTRO}-gz-ros2-control \
+    ros-${ROS_DISTRO}-gz-ros2-control-demos \
     && rm -rf /var/lib/apt/lists/*
 
 
