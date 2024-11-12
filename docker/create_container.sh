@@ -54,7 +54,6 @@ else
         --volume="$XAUTH:$XAUTH_DOCKER:rw" \
         -p 27017:27017 \
         -v ~/mongodb7_data:/data/db \
-        --volume="/dev:/dev" \
         --volume="/etc/timezone:/etc/timezone:ro" \
         --volume="/etc/localtime:/etc/localtime:ro" \
         --volume="$HOST_WS_PATH:/home/mycobot/mycobot_ws/src:rw" \
@@ -62,4 +61,5 @@ else
         bash
 fi
 
+#        --volume="/dev:/dev" \
 

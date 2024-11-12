@@ -29,6 +29,7 @@ RUN apt-get update && apt-get install -y \
     python3-vcstool \
     libxcb-cursor0 \
     libmodbus-dev \
+    libusb-1.0-0-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # Add MongoDB 7 repository and install MongoDB
@@ -71,6 +72,8 @@ RUN apt-get update && apt-get install -y \
     ros-$ROS_DISTRO-gazebo-ros-pkgs \
     ros-${ROS_DISTRO}-gz-ros2-control \
     ros-${ROS_DISTRO}-gz-ros2-control-demos \
+    ros-${ROS_DISTRO}-librealsense2* \
+    ros-${ROS_DISTRO}-realsense2-* \
     && rm -rf /var/lib/apt/lists/*
 
 
