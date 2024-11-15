@@ -44,14 +44,7 @@ if nvidia-smi | grep -q NVIDIA; then
             --volume="/etc/localtime:/etc/localtime:ro" \
             --volume="/dev/bus/usb/$BUS/$PORT:/dev/bus/usb/$BUS/$PORT" \
             --device-cgroup-rule "c 189:* rmw" \
-            --device="/dev/video0:/dev/video0" \            
-            --device="/dev/video1:/dev/video1" \            
-            --device="/dev/video2:/dev/video2" \            
-            --device="/dev/video3:/dev/video3" \            
-            --device="/dev/video4:/dev/video4" \            
-            --device="/dev/video5:/dev/video5" \            
-            --device="/dev/video6:/dev/video6" \            
-            --device="/dev/video7:/dev/video7" \            
+            --volume="/dev:/dev" \                 
             --volume="$XSOCK:$XSOCK:rw" \
             --volume="$XAUTH:$XAUTH_DOCKER:rw" \
             --volume="$HOST_WS_PATH:/home/mycobot/mycobot_ws/src:rw" \
@@ -89,14 +82,7 @@ else
             --volume="/etc/localtime:/etc/localtime:ro" \
             --volume="/dev/bus/usb/$BUS/$PORT:/dev/bus/usb/$BUS/$PORT" \
             --device-cgroup-rule "c 189:* rmw" \
-            --device="/dev/video0:/dev/video0" \            
-            --device="/dev/video1:/dev/video1" \            
-            --device="/dev/video2:/dev/video2" \            
-            --device="/dev/video3:/dev/video3" \            
-            --device="/dev/video4:/dev/video4" \            
-            --device="/dev/video5:/dev/video5" \            
-            --device="/dev/video6:/dev/video6" \            
-            --device="/dev/video7:/dev/video7" \            
+            --volume="/dev:/dev" \          
             --volume="$HOST_WS_PATH:/home/mycobot/mycobot_ws/src:rw" \
             "$DOCKER_IMAGE" \
             bash
