@@ -77,3 +77,19 @@
   ros_type_name: "std_msgs/msg/Float64"
   gz_type_name: "ignition.msgs.Double" # In future, this will be gz.msgs.Double
   direction: ROS_TO_GZ
+
+# gz topic published by Sensors plugin 
+- ros_topic_name: "camera_head/depth/camera_info"
+  gz_topic_name: "camera_head/camera_info"
+  ros_type_name: "sensor_msgs/msg/CameraInfo"
+  gz_type_name: "ignition.msgs.CameraInfo" # In future, this will be gz.msgs.CameraInfo
+  direction: GZ_TO_ROS
+  lazy: true # Determines whether connections are created immediately at startup (when false) or only when data is actually requested by a subscriber (when true), helping to conserve system resources at the cost of potential initial delays in data flow.
+
+# gz topic published by Sensors plugin 
+- ros_topic_name: "camera_head/depth/color/points"
+  gz_topic_name: "camera_head/points"
+  ros_type_name: "sensor_msgs/msg/PointCloud2"
+  gz_type_name: "ignition.msgs.PointCloudPacked" # In future, this will be gz.msgs.PointCloudPacked
+  direction: GZ_TO_ROS
+  lazy: true
