@@ -44,7 +44,7 @@ if nvidia-smi | grep -q NVIDIA; then
             --volume="/etc/localtime:/etc/localtime:ro" \
             --volume="/dev/bus/usb/$BUS/$PORT:/dev/bus/usb/$BUS/$PORT" \
             --device-cgroup-rule "c 189:* rmw" \
-            --volume="/dev:/dev" \                 
+            --volume="/dev:/dev" \
             --volume="$XSOCK:$XSOCK:rw" \
             --volume="$XAUTH:$XAUTH_DOCKER:rw" \
             --volume="$HOST_WS_PATH:/home/mycobot/mycobot_ws/src:rw" \
