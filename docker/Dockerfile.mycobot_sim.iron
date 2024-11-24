@@ -27,6 +27,7 @@ RUN apt-get update && apt-get install -y \
     python3-scipy \
     python3-colcon-common-extensions \
     python3-vcstool \
+    python3-pip \
     libxcb-cursor0 \
     libmodbus-dev \
     libusb-1.0-0-dev \
@@ -99,6 +100,7 @@ WORKDIR ${ROS_WS}
 # Switch to mycobot user
 USER mycobot
 
+RUN pip install pymycobot --user
 
 RUN /bin/bash -c "source /opt/ros/${ROS_DISTRO}/setup.bash && \
     colcon build --symlink-install --executor sequential"
