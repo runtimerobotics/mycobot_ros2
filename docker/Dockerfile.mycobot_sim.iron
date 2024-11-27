@@ -84,6 +84,8 @@ RUN mkdir -p ${ROS_WS}/src
 # Copy the dependencies packages into the workspace
 COPY . ${ROS_WS}/src/mycobot_ros2
 
+COPY docker/launches.py /opt/ros/iron/lib/python3.10/site-packages/moveit_configs_utils/
+
 # Copy entrypoint scripts
 COPY docker/mycobot_entrypoint.sh ${HOME}/mycobot_entrypoint.sh
 
