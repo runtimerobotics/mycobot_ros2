@@ -1,5 +1,5 @@
 # Use the official ROS Iron desktop full base image
-FROM osrf/ros:iron-desktop-full
+FROM osrf/ros:humble-desktop-full
 
 # Set up environment variables
 ENV DEBIAN_FRONTEND=noninteractive
