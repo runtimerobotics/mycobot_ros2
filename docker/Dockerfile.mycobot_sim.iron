@@ -116,6 +116,7 @@ RUN /bin/bash -c "source /opt/ros/${ROS_DISTRO}/setup.bash && \
 # Source the workspace setup
 RUN echo "source ${ROS_WS}/install/setup.bash" >> ~/.bashrc
 RUN echo "export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp" >> ~/.bashrc
+RUN echo "export ROS_DOMAIN_ID=1" >> ~/.bashrc
 
 # Entrypoint
 ENTRYPOINT ["/ros_entrypoint.sh", "/home/mycobot/mycobot_entrypoint.sh"]
