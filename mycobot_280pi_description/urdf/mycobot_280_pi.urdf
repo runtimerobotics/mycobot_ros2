@@ -1,8 +1,6 @@
 <?xml version="1.0"?>
-<robot  xmlns:xacro="http://www.ros.org/wiki/xacro" name="firefighter" >
+<robot  xmlns:xacro="http://www.ros.org/wiki/xacro" name="mycobot_280pi" >
 	
-<xacro:property name="width" value=".2" />
-
 
   <link name="g_base">
     <visual>
