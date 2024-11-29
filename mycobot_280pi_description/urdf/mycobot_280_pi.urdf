@@ -4,47 +4,72 @@
 
 
   <link name="g_base">
+	<inertial>
+			<origin xyz="0 0 0.0" rpy="0 0 0"/>
+			<mass value="0.33"/>
+			<inertia
+				ixx="0.000784" ixy="0.0" ixz="0.0"
+				iyy="0.000867" iyz="0.0"
+				izz="0.001598"/>
+	</inertial>
     <visual>
       <geometry>
-        <mesh filename="package://mycobot_description/urdf/mycobot_280_pi/G_base.dae"/>
+        <mesh filename="file://$(find mycobot_280pi_description)/meshes/G_base.dae"/>
       </geometry>
       <origin xyz = "0.0 0 -0.03" rpy = "0 0 1.5708"/>
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://mycobot_description/urdf/mycobot_280_pi/G_base.dae"/>
+        <mesh filename="file://$(find mycobot_280pi_description)/meshes/G_base.dae"/>
       </geometry>
       <origin xyz = "0.0 0 -0.03" rpy = "0 0 1.5708"/>
     </collision>
   </link>
 
   <link name="joint1">
+	<inertial>
+			<origin xyz="0 0 0.0" rpy="0 0 0"/>
+			<mass value="0.12"/>
+			<inertia
+				ixx="0.000148" ixy="0.0" ixz="0.0"
+				iyy="0.000148" iyz="0.0"
+				izz="0.000096"/>
+	</inertial>
+
     <visual>
       <geometry>
 	     <!--- 0.0 0 -0.04  1.5708 3.14159-->
-       <mesh filename="package://mycobot_description/urdf/mycobot_280_pi/joint1_pi.dae"/>
+       <mesh filename="file://$(find mycobot_280pi_description)/meshes/joint1_pi.dae" scale="0.001 0.001 0.001"/>
       </geometry>
     <origin xyz = "0.0 0 0 " rpy = " 0 0 0"/>
     </visual>
     <collision>
       <geometry>
 	     <!--- 0.0 0 -0.04  1.5708 3.14159-->
-       <mesh filename="package://mycobot_description/urdf/mycobot_280_pi/joint1_pi.dae"/>
+       <mesh filename="file://$(find mycobot_280pi_description)/meshes/joint1_pi.dae" scale="0.001 0.001 0.001"/>
       </geometry>
     <origin xyz = "0.0 0 0 " rpy = " 0 0 0"/>
     </collision>
   </link>
 
   <link name="joint2">
+	<inertial>
+			<origin xyz="0 0 0.0" rpy="0 0 0"/>
+			<mass value="0.19"/>
+			<inertia
+				ixx="0.000148" ixy="0.0" ixz="0.0"
+				iyy="0.000148" iyz="0.0"
+				izz="0.000096"/>
+	</inertial>
     <visual>
       <geometry>
-       <mesh filename="package://mycobot_description/urdf/mycobot_280_pi/joint2.dae"/>
+       <mesh filename="file://$(find mycobot_280pi_description)/meshes/joint2.dae"/>
       </geometry>
     <origin xyz = "0.0 0 -0.06096 " rpy = " 0 0 -1.5708"/>
     </visual>
       <collision>
       <geometry>
-       <mesh filename="package://mycobot_description/urdf/mycobot_280_pi/joint2.dae"/>
+       <mesh filename="file://$(find mycobot_280pi_description)/meshes/joint2.dae"/>
       </geometry>
     <origin xyz = "0.0 0 -0.06096 " rpy = " 0 0 -1.5708"/>
     </collision>
@@ -52,16 +77,23 @@
 
 
   <link name="joint3">
+	<inertial>
+			<origin xyz="0 0 0.0" rpy="0 0 0"/>
+		  	<mass value="0.16"/>
+			<inertia
+			  ixx="0.000148" ixy="0.0" ixz="0.0"
+			  iyy="0.000148" iyz="0.0"
+			  izz="0.000096"/>
+	</inertial>
     <visual>
-      <geometry>
-       
-       <mesh filename="package://mycobot_description/urdf/mycobot_280_pi/joint3.dae"/>
+      <geometry>     
+       <mesh filename="file://$(find mycobot_280pi_description)/meshes/joint3.dae"/>
       </geometry>
     <origin xyz = "0.0 0 0.03256 " rpy = " 0 -1.5708 0"/>
     </visual>
       <collision>
         <geometry>
-       <mesh filename="package://mycobot_description/urdf/mycobot_280_pi/joint3.dae"/>
+       <mesh filename="file://$(find mycobot_280pi_description)/meshes/joint3.dae"/>
       </geometry>
     <origin xyz = "0.0 0 0.03256 " rpy = " 0 -1.5708 0"/>
     </collision>
@@ -69,17 +101,25 @@
 
 
   <link name="joint4">
+	<inertial>
+		  	<origin xyz="0 0 0.0" rpy="0 0 0"/>
+			<mass value="0.124"/>
+			<inertia
+			  	ixx="0.000103" ixy="0.0" ixz="0.0"
+			  	iyy="0.000103" iyz="0.0"
+			  	izz="0.000096"/>
+	</inertial>
     <visual>
       <geometry>
        <!--- 0.0 0 -0.04 -->
-       <mesh filename="package://mycobot_description/urdf/mycobot_280_pi/joint4.dae"/>
+       <mesh filename="file://$(find mycobot_280pi_description)/meshes/joint4.dae"/>
       </geometry>
     <origin xyz = "0.0 0 0.03056 " rpy = " 0 -1.5708 0"/>
     </visual>
       <collision>
       <geometry>
        <!--- 0.0 0 -0.04 -->
-       <mesh filename="package://mycobot_description/urdf/mycobot_280_pi/joint4.dae"/>
+       <mesh filename="file://$(find mycobot_280pi_description)/meshes/joint4.dae"/>
       </geometry>
     <origin xyz = "0.0 0 0.03056 " rpy = " 0 -1.5708 0"/>
     </collision>
@@ -89,17 +129,25 @@
 
 
 <link name="joint5">
+	<inertial>
+			<origin xyz="0 0 0.0" rpy="0 0 0"/>
+		  	<mass value="0.11"/>
+			<inertia
+			  ixx="0.000103" ixy="0.0" ixz="0.0"
+			  iyy="0.000103" iyz="0.0"
+			  izz="0.000096"/>
+	</inertial>
     <visual>
       <geometry>
        <!--- 0.0 0 -0.04 -->
-       <mesh filename="package://mycobot_description/urdf/mycobot_280_pi/joint5.dae"/>
+       <mesh filename="file://$(find mycobot_280pi_description)/meshes/joint5.dae" scale="0.001 0.001 0.001"/>
       </geometry>
     <origin xyz = "0.0 0 -0.03356 " rpy = " 0 -1.5708 1.5708"/>
     </visual>
       <collision>
       <geometry>
        <!--- 0.0 0 -0.04 -->
-       <mesh filename="package://mycobot_description/urdf/mycobot_280_pi/joint5.dae"/>
+       <mesh filename="file://$(find mycobot_280pi_description)/meshes/joint5.dae" scale="0.001 0.001 0.001"/>
       </geometry>
     <origin xyz = "0.0 0 -0.03356 " rpy = " 0 -1.5708 1.5708"/>
     </collision>
@@ -107,17 +155,25 @@
 
 
   <link name="joint6">
+	<inertial>
+			<origin xyz="0 0 0.0" rpy="0 0 0"/>
+		  	<mass value="0.0739"/>
+			<inertia
+			  ixx="0.00006649" ixy="0.0" ixz="0.0"
+			  iyy="0.00006649" iyz="0.0"
+			  izz="0.000096"/>
+	</inertial>
     <visual>
       <geometry>
        <!--- 0.0 0 -0.04 -->
-       <mesh filename="package://mycobot_description/urdf/mycobot_280_pi/joint6.dae"/>
+       <mesh filename="file://$(find mycobot_280pi_description)/meshes/joint6.dae"/>
       </geometry>
     <origin xyz = "0 0.00 -0.038 " rpy = " 0 0 0"/>
     </visual>
       <collision>
       <geometry>
        <!--- 0.0 0 -0.04 -->
-       <mesh filename="package://mycobot_description/urdf/mycobot_280_pi/joint6.dae"/>
+       <mesh filename="file://$(find mycobot_280pi_description)/meshes/joint6.dae"/>
       </geometry>
     <origin xyz = "0 0.00 -0.038 " rpy = " 0 0 0"/>
     </collision>
@@ -125,17 +181,25 @@
 
 
   <link name="joint6_flange">
+	<inertial>
+			<origin xyz="0 0 0.0" rpy="0 0 0"/>
+		  	<mass value="0.035"/>
+		  	<inertia
+				ixx="0.0000149" ixy="0.0" ixz="0.0"
+				iyy="0.0000149" iyz="0.0"
+				izz="0.0000196"/>
+	</inertial>
     <visual>
       <geometry>
        <!--- 0.0 0 -0.04 -->
-       <mesh filename="package://mycobot_description/urdf/mycobot_280_pi/joint7.dae"/>
+       <mesh filename="file://$(find mycobot_280pi_description)/meshes/joint7.dae"/>
       </geometry>
     <origin xyz = "0.0 0 -0.012 " rpy = " 0 0 0"/>
     </visual>
       <collision>
       <geometry>
        <!--- 0.0 0 -0.04 -->
-       <mesh filename="package://mycobot_description/urdf/mycobot_280_pi/joint7.dae"/>
+       <mesh filename="file://$(find mycobot_280pi_description)/meshes/joint7.dae"/>
       </geometry>
     <origin xyz = "0.0 0 -0.012 " rpy = " 0 0 0"/>
     </collision>
@@ -157,6 +221,7 @@
     <parent link="joint1"/>
     <child link="joint2"/>
     <origin xyz= "0 0 0.13956" rpy = "0 0 0"/>  
+    <dynamics damping="0.0" friction="0.0"/>
   </joint>
 
 
@@ -166,6 +231,7 @@
     <parent link="joint2"/>
     <child link="joint3"/>
     <origin xyz= "0 0 -0.001" rpy = "0 1.5708 -1.5708"/>  
+    <dynamics damping="0.0" friction="0.0"/>
   </joint>
 
 
@@ -175,6 +241,7 @@
     <parent link="joint3"/>
     <child link="joint4"/>
     <origin xyz= "  -0.1104 0 0   " rpy = "0 0 0"/>  
+    <dynamics damping="0.0" friction="0.0"/>
   </joint>
 
 
@@ -185,6 +252,7 @@
     <parent link="joint4"/>
     <child link="joint5"/>
     <origin xyz= "-0.096 0 0.06462" rpy = "0 0 -1.5708"/>  
+    <dynamics damping="0.0" friction="0.0"/>
   </joint>
 
   <joint name="joint6_to_joint5" type="revolute">
@@ -193,6 +261,7 @@
     <parent link="joint5"/>
     <child link="joint6"/>
     <origin xyz= "0 -0.07318 0" rpy = "1.5708 -1.5708 0"/>  
+    <dynamics damping="0.0" friction="0.0"/>
   </joint>
 
   <joint name="joint6output_to_joint6" type="revolute">
@@ -201,8 +270,8 @@
     <parent link="joint6"/>
     <child link="joint6_flange"/>
     <origin xyz= "0 0.0456 0" rpy = "-1.5708 0 0"/>  
+    <dynamics damping="0.0" friction="0.0"/>
   </joint>
-
 
 
 <!-- Gripper -->
