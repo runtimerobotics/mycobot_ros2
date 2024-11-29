@@ -78,6 +78,7 @@ RUN apt-get update && apt-get install -y \
     ros-${ROS_DISTRO}-pcl-ros \
     ros-${ROS_DISTRO}-rqt-tf-tree \
     ros-${ROS_DISTRO}-rqt-graph \
+    ros-${ROS_DISTRO}-rqt-joint-trajectory-controller \
     && rm -rf /var/lib/apt/lists/*
 
 

@@ -447,7 +447,7 @@
 
 	<joint name="gripper_controller" type="revolute">
 		<axis xyz="0 0 1"/>
-		<limit effort = "${effort}" lower = "-0.73" upper = "0.15" velocity = "${velocity}" />
+		<limit effort = "${effort}" lower = "-0.58" upper = "0.15" velocity = "${velocity}" />
 		<parent link="gripper_base"/>
 		<child link="gripper_left3"/>
 		<origin xyz= "-0.012 0.005 0" rpy = "0 0 0"/> 

@@ -131,13 +131,13 @@ def generate_launch_description():
 
   # Start gripper controller
   start_gripper_controller_cmd =  ExecuteProcess(
-    cmd=['ros2', 'control', 'load_controller', '--set-state', 'inactive',
+    cmd=['ros2', 'control', 'load_controller', '--set-state', 'active',
         'grip_controller'],
         output='screen')
 
   # Start gripper action controller
   start_gripper_action_controller_cmd = ExecuteProcess(
-    cmd=['ros2', 'control', 'load_controller', '--set-state', 'active',
+    cmd=['ros2', 'control', 'load_controller', '--set-state', 'inactive',
         'grip_action_controller'],
         output='screen')
   
