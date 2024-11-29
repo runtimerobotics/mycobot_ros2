@@ -16,8 +16,14 @@ find_package(trajectory_msgs REQUIRED)
 find_package(xacro REQUIRED)
 
 install (
-  DIRECTORY launch urdf config worlds
+  DIRECTORY launch urdf config worlds 
   DESTINATION share/${PROJECT_NAME}
+)
+
+install(
+  PROGRAMS
+    scripts/republish_joints.py
+  DESTINATION lib/${PROJECT_NAME}
 )
 
 if(BUILD_TESTING)

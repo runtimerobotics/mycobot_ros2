@@ -187,6 +187,15 @@ def generate_launch_description():
       '-Y', yaw
       ],
     output='screen')
+  
+  #Start republish node
+  republish_node = Node(
+            package='mycobot_280pi_gazebo',
+            executable='republish_joints.py',
+            name='republish_joints',
+            output='screen',
+        )
+
 
   # Launch the joint state broadcaster after spawning the robot
   load_joint_state_broadcaster_cmd = RegisterEventHandler(
@@ -242,6 +251,8 @@ def generate_launch_description():
   ld.add_action(load_arm_controller_cmd) 
   ld.add_action(load_gripper_controller_cmd) 
   ld.add_action(load_gripper_action_controller_cmd)
+
+  ld.add_action(republish_node)
 
   return ld
 
