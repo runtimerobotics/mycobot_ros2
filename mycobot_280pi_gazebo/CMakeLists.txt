@@ -16,7 +16,7 @@ find_package(trajectory_msgs REQUIRED)
 find_package(xacro REQUIRED)
 
 install (
-  DIRECTORY launch rviz urdf config worlds
+  DIRECTORY launch urdf config worlds
   DESTINATION share/${PROJECT_NAME}
 )
 
