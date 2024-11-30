@@ -4,7 +4,7 @@ from rclpy.node import Node
 from sensor_msgs.msg import JointState
 import time
 import math
-
+import sys
 
 
 
@@ -19,11 +19,14 @@ class Slider_Subscriber(Node):
         )
         self.subscription
 
-        self.mc = MyCobot("/dev/ttyAMA0", 1000000)
-        print("Initialize control node and robot")
-        time.sleep(0.05)
-        self.mc.set_fresh_mode(1)
-        time.sleep(0.05)
+        self.enable_hw=int(sys.argv[1])
+
+        if(self.enable_hw):
+            self.mc = MyCobot("/dev/ttyAMA0", 1000000)
+            print("Initialize control node and robot")
+            time.sleep(0.05)
+            self.mc.set_fresh_mode(1)
+            time.sleep(0.05)
         self.prev_grip_val=0
 
     def scale_value(self,value, input_min, input_max, output_min, output_max):
@@ -42,9 +45,11 @@ class Slider_Subscriber(Node):
         #print('data_list: {}'.format(data_list))
 
         arm_joints=data_list[:-1]
-        if(not self.mc.is_gripper_moving()):
-           self.mc.send_angles(arm_joints, 25)
-           print("Arm joints:",arm_joints)
+        print("Arm joints:",arm_joints)
+
+        if(self.enable_hw):
+            if(not self.mc.is_gripper_moving()):
+                self.mc.send_angles(arm_joints, 25)
 	#Sending to gripper
         gripper_value=data_list[-1:]
 	
@@ -62,10 +67,11 @@ class Slider_Subscriber(Node):
         self.current_grip_val=int(grip_final)
         print("Current gripper value",self.current_grip_val)
 
-        if(self.current_grip_val != self.prev_grip_val):
-                if(not self.mc.is_gripper_moving()):
-                   print("Sending to gripper:",self.current_grip_val)
-                   self.mc.set_gripper_value(self.current_grip_val,70,1)
+        if(self.enable_hw):
+            if(self.current_grip_val != self.prev_grip_val):
+                    if(not self.mc.is_gripper_moving()):
+                        print("Sending to gripper:",self.current_grip_val)
+                        self.mc.set_gripper_value(self.current_grip_val,70,1)
                 #self.mc.set_gripper_state(1,70);
         #self.mc.set_gripper_value(self.current_grip_val,20,1)
 
