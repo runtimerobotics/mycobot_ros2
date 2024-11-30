@@ -19,15 +19,17 @@ def generate_launch_description():
   default_robot_name = 'mycobot_280'
   gazebo_launch_file_path = 'launch'
   gazebo_models_path = 'models'
+  ros_gz_bridge_config_file_path = 'config/ros_gz_bridge.yaml'
   rviz_config_file_path = 'rviz/mycobot_pi.rviz'
   urdf_file_path = 'urdf/mycobot_280pi.xacro'
-  world_file_path = 'worlds/empty.world' # e.g. 'world/empty.world', 'world/house.world'
+  world_file_path = 'worlds/empty.world' 
 
   # Set the path to different files and folders.  
   pkg_ros_gz_sim = FindPackageShare(package='ros_gz_sim').find('ros_gz_sim')  
   pkg_share_description = FindPackageShare(package=package_name_description).find(package_name_description)
   pkg_share_gazebo = FindPackageShare(package=package_name_gazebo).find(package_name_gazebo)
 
+  default_ros_gz_bridge_config_file_path = os.path.join(pkg_share_gazebo, ros_gz_bridge_config_file_path)
   default_rviz_config_path = os.path.join(pkg_share_description, rviz_config_file_path)  
   default_urdf_model_path = os.path.join(pkg_share_gazebo, urdf_file_path)
   gazebo_launch_file_path = os.path.join(pkg_share_gazebo, gazebo_launch_file_path)   
@@ -221,6 +223,31 @@ def generate_launch_description():
     target_action=start_gripper_controller_cmd,
     on_exit=[start_gripper_action_controller_cmd],))    
 
+
+  # Bridge ROS topics and Gazebo messages for establishing communication
+  start_gazebo_ros_bridge_cmd = Node(
+    package='ros_gz_bridge',
+    executable='parameter_bridge',
+    parameters=[{
+      'config_file': default_ros_gz_bridge_config_file_path,
+    }],
+    output='screen'
+  )  
+    
+  start_gazebo_ros_image_bridge_cmd = Node(
+    package='ros_gz_image',
+    executable='image_bridge',
+    arguments=[
+      '/camera_head/depth_image',
+      '/camera_head/image',
+    ],
+    remappings=[
+      ('/camera_head/depth_image', '/camera_head/depth/image_rect_raw'),
+      ('/camera_head/image', '/camera_head/color/image_raw'),
+    ],
+  )
+
+
   # Create the launch description and populate
   ld = LaunchDescription()
 
@@ -253,6 +280,10 @@ def generate_launch_description():
   ld.add_action(load_gripper_action_controller_cmd)
 
   ld.add_action(republish_node)
+  ld.add_action(start_gazebo_ros_bridge_cmd)
+  ld.add_action(start_gazebo_ros_image_bridge_cmd)
+
+  
 
   return ld
 
