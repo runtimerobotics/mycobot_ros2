@@ -21,6 +21,10 @@
 #include <geometric_shapes/shape_operations.h>
 #include <ament_index_cpp/get_package_share_directory.hpp>
 
+#include <moveit/planning_scene_monitor/planning_scene_monitor.h>
+#include <moveit/robot_state/robot_state.h>
+
+
 #include <vector>
 #include <signal.h>
 #include <cmath>
@@ -38,19 +42,647 @@ class MoveIt_Task
 {
 public:
   // Constructor
-  MoveIt_Task(const std::shared_ptr<rclcpp::Node> &node, moveit::planning_interface::MoveGroupInterface &move_group, moveit::planning_interface::PlanningSceneInterface &planning_scene) : node_(node), move_group_(move_group), planning_scene_(planning_scene)
+  MoveIt_Task(const std::shared_ptr<rclcpp::Node> &node, moveit::planning_interface::MoveGroupInterface &move_group_arm, moveit::planning_interface::MoveGroupInterface &move_group_gripper,moveit::planning_interface::PlanningSceneInterface &planning_scene) : node_(node), move_group_arm_(move_group_arm), move_group_gripper_(move_group_gripper), planning_scene_(planning_scene)
   {
 
+    // Set the maximum velocity scaling factor (optional)
+    move_group_arm_.setMaxVelocityScalingFactor(0.75/2);
+    move_group_arm_.setMaxAccelerationScalingFactor(0.9/2);
 
-   
+///////////////////////////////////////////////////////////////////
+
+    auto robot_model_loader = std::make_shared<robot_model_loader::RobotModelLoader>(node_, "robot_description");
+    auto robot_model = robot_model_loader->getModel();
+    if (!robot_model)
+    {
+        RCLCPP_ERROR(node->get_logger(), "Failed to load robot model.");
+        //return 1;
+    }
+
+
+    auto planning_scene_monitor = std::make_shared<planning_scene_monitor::PlanningSceneMonitor>(node_, robot_model_loader);
+
+    if (!planning_scene_monitor->getPlanningScene())
+    {
+        RCLCPP_ERROR(node->get_logger(), "Planning Scene Monitor failed to initialize.");
+       // return 1;
+    }
+
+    // Start state monitor
+    planning_scene_monitor->startStateMonitor("/joint_states");
+
+    // Check if the state monitor has started successfully
+    if (planning_scene_monitor->getStateMonitor())
+    {
+        RCLCPP_INFO(node->get_logger(), "State monitor started successfully. Monitoring robot state...");
+    }
+    else
+    {
+        RCLCPP_ERROR(node->get_logger(), "Failed to start state monitor.");
+        //return 1;
+    }
+
+
+    //move_group_arm_.startStateMonitor(5.0);
+
+///////////////////////////////////////////////////////////////////
+
+    // Set planner ID
+    // move_group_.setPlannerId("RRTstarkConfigDefault");  // Switch to RRT* planner
+    move_group_arm_.setPlannerId("RRTConnectkConfigDefault");  // Switch to RRTConnect planner
+    // move_group_.setPlannerId("APSConfigDefault");
+
+    move_group_arm_.setPlanningPipelineId("ompl");     // Set planning pipeline
+    move_group_arm_.setGoalPositionTolerance(0.001);    // 1 mm tolerance
+    move_group_arm_.setGoalOrientationTolerance(0.001); // Tolerance for orientation (0.01 radians = 0.57 degress)
+
+    // Set planning time and planning attempts
+    move_group_arm_.setPlanningTime(4.0);     // 10 seconds max planning time
+    move_group_arm_.setNumPlanningAttempts(10); // Try planning 5 times
+ 
 
   }
+  // Destructor
+  ~MoveIt_Task()
+  {
+    RCLCPP_WARN(node_->get_logger(), "Closing application...");
+  }
+
+
+//Move a particular joint
+bool move_joint(int index, double joint_value)
+{
+    std::vector<double> joint_group_positions;
+    move_group_arm_.getCurrentState()->copyJointGroupPositions("arm", joint_group_positions);
+    joint_group_positions[index] = joint_value;
+    move_group_arm_.setJointValueTarget(joint_group_positions);
+    // Plan and execute the motion
+    moveit::planning_interface::MoveGroupInterface::Plan plan;
+    bool success = (move_group_arm_.plan(plan) == moveit::core::MoveItErrorCode::SUCCESS);
+    if (success) {
+        moveit::core::MoveItErrorCode exec_status = move_group_arm_.execute(plan); // Execute the Cartesian motion
+        std::cout << "Execution Status Code: " << exec_status.val << std::endl;
+        RCLCPP_INFO(node_->get_logger(), "Successfully moved the joint!  [%d]   [%f]",index,joint_value);
+        switch (exec_status.val) 
+        {
+          case moveit::core::MoveItErrorCode::SUCCESS:
+            std::cout << "Execution Status: SUCCESS" << std::endl;
+            break;
+          case moveit::core::MoveItErrorCode::FAILURE:
+            std::cout << "Execution Status: FAILURE" << std::endl;
+            break;
+          case moveit::core::MoveItErrorCode::PLANNING_FAILED:
+            std::cout << "Execution Status: PLANNING_FAILED" << std::endl;
+            break;
+          case moveit::core::MoveItErrorCode::INVALID_MOTION_PLAN:
+            std::cout << "Execution Status: INVALID_MOTION_PLAN" << std::endl;
+            break;
+          case moveit::core::MoveItErrorCode::MOTION_PLAN_INVALIDATED_BY_ENVIRONMENT_CHANGE:
+            std::cout << "Execution Status: MOTION_PLAN_INVALIDATED_BY_ENVIRONMENT_CHANGE" << std::endl;
+            break;
+          case moveit::core::MoveItErrorCode::CONTROL_FAILED:
+            std::cout << "Execution Status: CONTROL_FAILED" << std::endl;
+            break;
+          case moveit::core::MoveItErrorCode::UNABLE_TO_AQUIRE_SENSOR_DATA:
+            std::cout << "Execution Status: UNABLE_TO_AQUIRE_SENSOR_DATA" << std::endl;
+            break;
+          case moveit::core::MoveItErrorCode::TIMED_OUT:
+            std::cout << "Execution Status: TIMED_OUT" << std::endl;
+            break;
+          case moveit::core::MoveItErrorCode::PREEMPTED:
+            std::cout << "Execution Status: PREEMPTED" << std::endl;
+            break;
+          default:
+            std::cout << "Execution Status: UNKNOWN ERROR CODE (" << exec_status.val << ")" << std::endl;
+        }
+      return true;
+    } else {
+        RCLCPP_WARN(node_->get_logger(), "Failed to plan for the joint movement.[%d]   [%f]",index,joint_value);
+        return false;
+    }
+}
+
+
+
+  // Function to move the robot to a predefined "home" position using a named target
+  bool move_home(std::string home_pose)
+  {
+
+    std::string named_target = home_pose; // Store the provided named target for the robot's home position
+
+    bool target_exists = move_group_arm_.setNamedTarget(named_target); // Set the named target for the robot's arm (move_group uses named targets predefined in the robot's configuration)
+
+    if (!target_exists)
+    {
+      RCLCPP_ERROR(node_->get_logger(), "Named target '%s' not found!", named_target.c_str()); // Log an error message if the target doesn't exist
+      return false;
+    }
+
+    moveit::planning_interface::MoveGroupInterface::Plan my_plan;
+    bool success = (move_group_arm_.plan(my_plan) == moveit::core::MoveItErrorCode::SUCCESS); // Plan the motion to the named target (MoveIt creates a trajectory to move to the target)
+
+    // If planning was successful, execute the planned motion
+    if (success)
+    {
+      RCLCPP_INFO(node_->get_logger(), "Planning to named target '%s' successful!", named_target.c_str());
+
+      move_group_arm_.execute(my_plan); // Execute the planned motion to the home position
+      //current_plan = my_plan;
+
+      RCLCPP_INFO(node_->get_logger(), "Motion to '%s' executed.", named_target.c_str());
+
+      //set_lifting_height(0.0);
+
+      return true;
+    }
+    else
+    {
+      RCLCPP_ERROR(node_->get_logger(), "Planning to named target '%s' failed!", named_target.c_str());
+      return false;
+    }
+    
+  }
+
+////////////////////////////////////////////////////
+
+
+  // Function to move the robot to a predefined "home" position using a named target
+  bool move_gripper(std::string home_pose)
+  {
+
+    std::string named_target = home_pose; // Store the provided named target for the robot's home position
+
+    bool target_exists = move_group_gripper_.setNamedTarget(named_target); // Set the named target for the robot's arm (move_group uses named targets predefined in the robot's configuration)
+
+    if (!target_exists)
+    {
+      RCLCPP_ERROR(node_->get_logger(), "Named target '%s' not found!", named_target.c_str()); // Log an error message if the target doesn't exist
+      return false;
+    }
+
+    moveit::planning_interface::MoveGroupInterface::Plan my_plan;
+    bool success = (move_group_gripper_.plan(my_plan) == moveit::core::MoveItErrorCode::SUCCESS); // Plan the motion to the named target (MoveIt creates a trajectory to move to the target)
+
+    // If planning was successful, execute the planned motion
+    if (success)
+    {
+      RCLCPP_INFO(node_->get_logger(), "Planning to named target '%s' successful!", named_target.c_str());
+
+      move_group_arm_.execute(my_plan); // Execute the planned motion to the home position
+      //current_plan = my_plan;
+
+      RCLCPP_INFO(node_->get_logger(), "Motion to '%s' executed.", named_target.c_str());
+
+      //set_lifting_height(0.0);
+
+      return true;
+    }
+    else
+    {
+      RCLCPP_ERROR(node_->get_logger(), "Planning to named target '%s' failed!", named_target.c_str());
+      return false;
+    }
+    
+  }
+
+
+//////////////////////////////////////////////////////////////////
+
+
+  // Function to move the robot's end-effector in Cartesian space relative to its current position
+  bool move_relative_cartesian(std::string axis, double value)
+  {
+    
+    geometry_msgs::msg::PoseStamped current_pose = move_group_arm_.getCurrentPose(); // Get the current pose (position and orientation) of the end-effector
+
+    move_group_arm_.setStartStateToCurrentState();
+
+    std::vector<geometry_msgs::msg::Pose> waypoints;          // Define waypoints for the Cartesian motion (a series of poses the robot will follow)
+    geometry_msgs::msg::Pose target_pose = current_pose.pose; // Initialize the target pose with the current pose
+
+    std::string x_axis = "x"; // Define strings to represent the axes of movement
+    std::string y_axis = "y";
+    std::string z_axis = "z";
+
+    // Check which axis to move along and update the corresponding position in the target pose
+    if (axis == x_axis)
+    {
+      target_pose.position.x = target_pose.position.x + value; // Move along the x-axis by adding the value to the current x position
+      waypoints.push_back(target_pose);                        // Add the updated pose to the waypoints
+    }
+    else if (axis == y_axis)
+    {
+      target_pose.position.y = target_pose.position.y + value;
+      waypoints.push_back(target_pose);
+    }
+    else if (axis == z_axis)
+    {
+      target_pose.position.z = target_pose.position.z + value;
+      waypoints.push_back(target_pose);
+    }
+    else
+    {
+      RCLCPP_INFO(node_->get_logger(), "No axis found");
+      return false;
+    }
+
+    // Plan the Cartesian path using the waypoints
+    moveit_msgs::msg::RobotTrajectory trajectory;
+    const double eef_step = 0.005;      // End-effector step size in meters
+    const double jump_threshold = 0.0; // Disable jump threshold (prevents sudden movements)
+
+    int try_count = 0;
+
+    // Execute the trajectory if at least 90% of the path was computed successfully
+    while (try_count<10)
+    {
+
+
+      double fraction = move_group_arm_.computeCartesianPath(waypoints, eef_step, jump_threshold, trajectory);
+      RCLCPP_INFO(node_->get_logger(), "Cartesian path (%.2f%% achieved)", fraction * 100.0); // Print the result of Cartesian path planning (the percentage of the Cartesian path that was successfully computed)
+
+      if (fraction > 0.7)
+      {
+        // Create a MoveGroupInterface plan and assign the computed trajectory to it
+        moveit::planning_interface::MoveGroupInterface::Plan cartesian_plan;
+        cartesian_plan.trajectory = trajectory;
+
+        moveit::core::MoveItErrorCode exec_status = move_group_arm_.execute(cartesian_plan); // Execute the Cartesian motion
+        std::cout << "Execution Status Code: " << exec_status.val << std::endl;
+        switch (exec_status.val) 
+        {
+          case moveit::core::MoveItErrorCode::SUCCESS:
+            std::cout << "Execution Status: SUCCESS" << std::endl;
+            break;
+          case moveit::core::MoveItErrorCode::FAILURE:
+            std::cout << "Execution Status: FAILURE" << std::endl;
+            break;
+          case moveit::core::MoveItErrorCode::PLANNING_FAILED:
+            std::cout << "Execution Status: PLANNING_FAILED" << std::endl;
+            break;
+          case moveit::core::MoveItErrorCode::INVALID_MOTION_PLAN:
+            std::cout << "Execution Status: INVALID_MOTION_PLAN" << std::endl;
+            break;
+          case moveit::core::MoveItErrorCode::MOTION_PLAN_INVALIDATED_BY_ENVIRONMENT_CHANGE:
+            std::cout << "Execution Status: MOTION_PLAN_INVALIDATED_BY_ENVIRONMENT_CHANGE" << std::endl;
+            break;
+          case moveit::core::MoveItErrorCode::CONTROL_FAILED:
+            std::cout << "Execution Status: CONTROL_FAILED" << std::endl;
+            break;
+          case moveit::core::MoveItErrorCode::UNABLE_TO_AQUIRE_SENSOR_DATA:
+            std::cout << "Execution Status: UNABLE_TO_AQUIRE_SENSOR_DATA" << std::endl;
+            break;
+          case moveit::core::MoveItErrorCode::TIMED_OUT:
+            std::cout << "Execution Status: TIMED_OUT" << std::endl;
+            break;
+          case moveit::core::MoveItErrorCode::PREEMPTED:
+            std::cout << "Execution Status: PREEMPTED" << std::endl;
+            break;
+          default:
+            std::cout << "Execution Status: UNKNOWN ERROR CODE (" << exec_status.val << ")" << std::endl;
+        }
+
+
+
+        //current_plan = cartesian_plan;
+
+        RCLCPP_INFO(node_->get_logger(), "Cartesian motion executed.");
+        //Saving trajectory
+        //save_trajectory(file_name);
+
+        ++try_count;
+        return true;
+      }
+      else if(try_count < 10)
+      { 
+        ++try_count;
+        RCLCPP_WARN(node_->get_logger(), "Failed to compute a valid Cartesian path. Retrying...");
+        continue;
+      }
+      else
+      {
+        RCLCPP_WARN(node_->get_logger(), "Failed to compute a valid Cartesian path after several attempts. Stopping...");
+        //stopRobot();        // Stop the robot
+        rclcpp::shutdown(); // Shut down ROS safely
+        exit(0);            // Exit the application
+        return false;
+      }
+ 
+    
+    }
+
+    exit(0);            // Exit the application
+    return false; // Ensure function always returns a boolean value
+  }
+
+
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+  // Function to move the robot's end-effector in Cartesian space relative to its current position
+  bool move_abs_cartesian(double x, double y, double z)
+  {
+
+    //rclcpp::sleep_for(std::chrono::seconds(2));
+
+    geometry_msgs::msg::PoseStamped current_pose = move_group_arm_.getCurrentPose(); // Get the current pose (position and orientation) of the end-effector
+
+    std::vector<geometry_msgs::msg::Pose> waypoints;          // Define waypoints for the Cartesian motion (a series of poses the robot will follow)
+    geometry_msgs::msg::Pose target_pose = current_pose.pose; // Initialize the target pose with the current pose
+
+    target_pose.position.x = target_pose.position.x + x; // Update the target pose with the absolute values provided for x, y, and z coordinates
+    target_pose.position.y = target_pose.position.y + y;
+    target_pose.position.z = target_pose.position.z + z;
+    waypoints.push_back(target_pose); // Add the updated target pose to the waypoints
+
+
+    // Plan the Cartesian path using the waypoints
+    moveit_msgs::msg::RobotTrajectory trajectory;
+    const double eef_step = 0.001;      // End-effector step size in meters
+    const double jump_threshold = 0.0; // Disable jump threshold (prevents sudden movements)
+
+    int try_count = 0;
+
+    // Execute the trajectory if at least 90% of the path was computed successfully
+    while (try_count<20)
+    {
+
+
+      //if(mode == "save")
+      //{
+
+      double fraction = move_group_arm_.computeCartesianPath(waypoints, eef_step, jump_threshold, trajectory);
+      RCLCPP_INFO(node_->get_logger(), "Cartesian path (%.2f%% achieved)", fraction * 100.0); // Print the result of Cartesian path planning (the percentage of the Cartesian path that was successfully computed)
+
+      if (fraction > 0.7)
+      {
+        // Create a MoveGroupInterface plan and assign the computed trajectory to it
+        moveit::planning_interface::MoveGroupInterface::Plan cartesian_plan;
+        cartesian_plan.trajectory = trajectory;
+
+        move_group_arm_.execute(cartesian_plan); // Execute the Cartesian motion
+        //current_plan = cartesian_plan;
+
+        RCLCPP_INFO(node_->get_logger(), "Cartesian motion executed.");
+        //Saving trajectory
+        //save_trajectory(file_name);
+
+        ++try_count;
+        return true;
+      }
+      else if(try_count < 10)
+      { 
+        ++try_count;
+        RCLCPP_WARN(node_->get_logger(), "Failed to compute a valid Cartesian path. Retrying...");
+        continue;
+      }
+      else
+      {
+        RCLCPP_WARN(node_->get_logger(), "Failed to compute a valid Cartesian path after several attempts. Stopping...");
+        //stopRobot();        // Stop the robot
+        rclcpp::shutdown(); // Shut down ROS safely
+        exit(0);            // Exit the application
+        return false;
+      }
+    
+     //}
+   
+    }
+
+
+    exit(0);            // Exit the application
+    return false; // Ensure function always returns a boolean value
+  }
+
+//////////////////////////////////////////////////////////////////////////
+
+
+ // Function to move the robot's end-effector to an absolute position with orientation constraints
+  bool move_abs(std::vector<double> position, std::string target_orientation= "N")
+  {
+    geometry_msgs::msg::Pose target_pose; // Define a target pose (position and orientation) for the robot
+
+    double x = position[0];
+    double y = position[1];
+    double z = position[2];
+
+    auto start_time_total = node_->now();
+
+    int current_try = 1;
+    while(current_try < max_planning_tries)
+    {
+
+      auto start_time_last = node_->now();
+
+    if (target_orientation == "N")
+    {
+      target_pose.orientation.x = 0.0;  
+      target_pose.orientation.y = 0.0;
+      target_pose.orientation.z = 0.0;
+      target_pose.orientation.w = 1.0;
+    }
+    else if (target_orientation == "E")
+    {
+      target_pose.orientation.x = 0.0;
+      target_pose.orientation.y = 0.0;
+      target_pose.orientation.z = 1.0 / std::sqrt(2);
+      target_pose.orientation.w = 1.0 / std::sqrt(2);
+    }
+    else if (target_orientation == "S")
+    {
+      target_pose.orientation.x = 0.0;
+      target_pose.orientation.y = 0.0;
+      target_pose.orientation.z = 1.0;
+      target_pose.orientation.w = 0.0;
+    }
+    else if (target_orientation == "W")
+    {
+      target_pose.orientation.x = 0.0;
+      target_pose.orientation.y = 0.0;
+      target_pose.orientation.z = -1.0 / std::sqrt(2);
+      target_pose.orientation.w = 1.0 / std::sqrt(2);
+    }
+    else
+    {
+      RCLCPP_INFO(node_->get_logger(), "No orientation found");
+      return false;
+    }
+    
+
+    target_pose.position.x = x; // Set the target position with the provided x, y, and z coordinates
+    target_pose.position.y = y;
+    target_pose.position.z = z;
+
+    move_group_arm_.setPoseTarget(target_pose); // Apply the target pose (both position and orientation)
+    // move_group_arm_.setRandomTarget();
+
+    /////////////////////////////////////////////////////////////////////////////////////
+
+    // Create an orientation constraint to ensure the gripper maintains the correct orientation
+    moveit_msgs::msg::OrientationConstraint ocm;
+
+    ocm.link_name = "gripper_base";       // Specify the link to be constrained (e.g., the gripper link)
+    ocm.header.frame_id = "g_base"; // Set the frame of reference for the orientation constraint
+
+    ocm.orientation = target_pose.orientation; // Set the desired orientation for the link (copy the orientation from the target pose)
+
+    ocm.absolute_x_axis_tolerance = 0.1; // Set tolerances for the allowed deviations from the desired orientation (in radians)
+    ocm.absolute_y_axis_tolerance = 0.1;
+    ocm.absolute_z_axis_tolerance = M_PI*0.51; 
+    ocm.weight = 1.0; // Assign a weight to the constraint (0.5 gives it medium importance)
+
+    // Create and add the path constraints
+    moveit_msgs::msg::Constraints path_constraints;          // Create a Constraints message to store the path constraints
+    path_constraints.name = "horizontal_constraint";         // Name the constraint for easier identification
+    path_constraints.orientation_constraints.push_back(ocm); // Add the orientation constraint to the path constraints
+    move_group_arm_.setPathConstraints(path_constraints);        // Apply the constraints to the move group to ensure the robot follows these constraints during motion planning
+
+    ///////////////////////////////////////////////////////////////////////////////////////////////
+
+    // add_constraints();
+
+    // Plan and execute the motion to the target pose
+
+    //if(mode == "save")
+    //{
+
+      moveit::planning_interface::MoveGroupInterface::Plan my_plan;
+      // bool success = (move_group_.plan(my_plan) == moveit::core::MoveItErrorCode::SUCCESS);
+      moveit::core::MoveItErrorCode plan_result = move_group_arm_.plan(my_plan);
+
+      if (plan_result == moveit::core::MoveItErrorCode::SUCCESS)
+      {
+        // If planning was successful, execute the plan
+        RCLCPP_INFO(node_->get_logger(), "Planning successful on try %d, executing the plan...", current_try);
+        
+        auto end_time = node_->now();
+
+        RCLCPP_INFO(node_->get_logger(), "Constrained absolute path computed after %d tries in %f seconds (last planning time: %fs)", current_try, (end_time - start_time_total).seconds(), (end_time - start_time_last).seconds());
+        move_group_arm_.execute(my_plan);
+        //current_plan = my_plan;
+        //save_trajectory(file_name);
+
+        move_group_arm_.clearPathConstraints(); // Clear the path constraints after the motion is completed
+        return true;                     // Return true if the motion was successfully planned and executed
+
+      }
+      else
+      {
+        std::string error_message = getErrorMessageForMoveItCode(plan_result);
+        switch (plan_result.val) 
+        {
+          case moveit::core::MoveItErrorCode::PLANNING_FAILED:
+              error_message = "Planning failed.";
+              break;
+          case moveit::core::MoveItErrorCode::INVALID_MOTION_PLAN:
+              error_message = "Invalid motion plan.";
+              break;
+          case moveit::core::MoveItErrorCode::INVALID_ROBOT_STATE:
+              error_message = "Invalid robot state.";
+              break;
+          case moveit::core::MoveItErrorCode::NO_IK_SOLUTION:
+              error_message = "No IK solution could be found.";
+              break;
+          case moveit::core::MoveItErrorCode::TIMED_OUT:
+              error_message = "Planning timed out.";
+              break;
+          case moveit::core::MoveItErrorCode::GOAL_IN_COLLISION:
+              error_message = "Goal is in collision.";
+              break;
+          case moveit::core::MoveItErrorCode::START_STATE_IN_COLLISION:
+              error_message = "Start state is in collision.";
+              break;
+          case moveit::core::MoveItErrorCode::START_STATE_VIOLATES_PATH_CONSTRAINTS:
+              error_message = "Start state violates path constraints.";
+              break;
+          default:
+              error_message = "Unknown error code: " + std::to_string(plan_result.val);
+              break;
+        }
+        RCLCPP_ERROR(node_->get_logger(), "Planning failed with error: %s", error_message.c_str());
+        ++current_try;
+        continue;
+        //stopRobot();        // Stop the robot
+        rclcpp::shutdown(); // Shut down ROS safely
+        exit(0);            // Exit the application
+      }
+    //}
+
+
+    }
+
+    RCLCPP_ERROR(node_->get_logger(), "Shutting down...");
+    throw std::runtime_error("Failed to plan and execute the motion");
+  }
+
+  ///////////////////////////////////////////
+
+  std::string getErrorMessageForMoveItCode(const moveit::core::MoveItErrorCode& error_code) 
+  {
+    switch (error_code.val) 
+    {
+      case moveit::core::MoveItErrorCode::PLANNING_FAILED:
+        return "Planning failed.";
+      case moveit::core::MoveItErrorCode::INVALID_MOTION_PLAN:
+        return "Invalid motion plan.";
+      case moveit::core::MoveItErrorCode::INVALID_ROBOT_STATE:
+        return "Invalid robot state.";
+      case moveit::core::MoveItErrorCode::NO_IK_SOLUTION:
+        return "No IK solution could be found.";
+      case moveit::core::MoveItErrorCode::TIMED_OUT:
+        return "Planning timed out.";
+      case moveit::core::MoveItErrorCode::GOAL_IN_COLLISION:
+        return "Goal is in collision.";
+      case moveit::core::MoveItErrorCode::START_STATE_IN_COLLISION:
+        return "Start state is in collision.";
+      case moveit::core::MoveItErrorCode::START_STATE_VIOLATES_PATH_CONSTRAINTS:
+        return "Start state violates path constraints.";
+      default:
+        return "Unknown error code: " + std::to_string(error_code.val);
+    }
+  }
+
+
+///////////////////////////////////////////////////////////////////
+  bool move_abs_joints(const std::vector<double>& joint_goal)
+  {
+    int current_try = 1;
+    while(current_try < max_planning_tries)
+    {
+      // Set the joint goal
+      move_group_arm_.setJointValueTarget(joint_goal);
+      // Plan the motion
+      moveit::planning_interface::MoveGroupInterface::Plan plan;
+      bool success = (move_group_arm_.plan(plan) == moveit::core::MoveItErrorCode::SUCCESS);
+      if (success)
+      {
+          RCLCPP_INFO(node_->get_logger(), "Planning successful! Executing the plan...");
+          move_group_arm_.execute(plan);
+          return success;
+      }
+      else
+      {
+          ++current_try;
+          RCLCPP_ERROR(node_->get_logger(), "Planning failed.");
+          continue;
+      }
+    }
+    RCLCPP_ERROR(node_->get_logger(), "Shutting down...");
+    throw std::runtime_error("Failed to plan and execute the motion");
+  }
+
+
+
+
+//////////////////////////////////////////////////////////////////////
 private:
   std::shared_ptr<rclcpp::Node> node_;                         // Store the node pointer
-  moveit::planning_interface::MoveGroupInterface &move_group_; // Store the reference
+  moveit::planning_interface::MoveGroupInterface &move_group_arm_; // Store the reference
+  moveit::planning_interface::MoveGroupInterface &move_group_gripper_; // Store the reference
   moveit::planning_interface::PlanningSceneInterface planning_scene_;
 
-
+  int max_planning_tries = 100;
 
 };
 int main(int argc, char* argv[])
@@ -59,14 +691,41 @@ int main(int argc, char* argv[])
   rclcpp::init(argc, argv);                                          // Initialize ROS 2
   auto node = rclcpp::Node::make_shared("pick_app"); // Create a ROS2 node called 'moveit2_cartesian_motion'
 
-  moveit::planning_interface::MoveGroupInterface move_group(node, "arm");  // Create a MoveGroupInterface object to control the robot arm with the 'tmr_arm' group
+  moveit::planning_interface::MoveGroupInterface move_group_arm(node, "arm");  // Create a MoveGroupInterface object to control the robot arm with the 'tmr_arm' group
+  moveit::planning_interface::MoveGroupInterface move_group_gripper(node, "gripper");  // Create a MoveGroupInterface object to control the robot arm with the 'tmr_arm' group
+
   moveit::planning_interface::PlanningSceneInterface planning_scene_interface; // Create a PlanningSceneInterface for managing collision objects in the environment
 
   rclcpp::executors::MultiThreadedExecutor executor; // Start a multi-threaded ROS2 executor to handle callbacks
   executor.add_node(node);
   std::thread([&executor]() { executor.spin(); }).detach();
 
-  auto move_obj = MoveIt_Task(node, move_group, planning_scene_interface); // Instantiate the MoveIt_Task 
+  auto move_obj = MoveIt_Task(node, move_group_arm, move_group_gripper, planning_scene_interface); // Instantiate the MoveIt_Task 
+
+  while (rclcpp::ok()) {
+
+
+
+    move_obj.move_home("home");
+    rclcpp::sleep_for(std::chrono::milliseconds(2000));
+    move_obj.move_gripper("open");
+    std::vector<double> joint_goal_degrees_pose1 = {-0.139626, -0.837758, -0.942478, 0.209439, -0.017453, -0.139626};
+    move_obj.move_abs_joints(joint_goal_degrees_pose1);
+    rclcpp::sleep_for(std::chrono::milliseconds(2000));
+    move_obj.move_gripper("open");
+    rclcpp::sleep_for(std::chrono::milliseconds(2000));
+    move_obj.move_gripper("close");
+    rclcpp::sleep_for(std::chrono::milliseconds(2000));
+    std::vector<double> joint_goal_degrees_pose2 = {0.523599,-0.715584,-1.186823,0.314159,0.017453,0.523599};
+    move_obj.move_abs_joints(joint_goal_degrees_pose2);
+    rclcpp::sleep_for(std::chrono::milliseconds(2000));
+    move_obj.move_gripper("open");
+    rclcpp::sleep_for(std::chrono::milliseconds(2000));
+
+
+  }
+
+
 
   return 0;
 

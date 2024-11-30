@@ -15,7 +15,7 @@ ARG USER_GID=1000
 RUN if id -u $USER_UID ; then userdel `id -un $USER_UID` ; fi
 
 # Install necessary dependencies
-RUN apt-get update && apt-get install -y \
+RUN apt update && apt upgrade -y && apt install -y \
     git \
     python3-pip \
     nano \
