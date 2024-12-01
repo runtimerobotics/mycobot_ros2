@@ -42,6 +42,9 @@
 #include <tf2_ros/transform_listener.h>
 #include <tf2_ros/buffer.h>
 
+#include <tf2_ros/transform_broadcaster.h>
+#include <geometry_msgs/msg/transform_stamped.hpp>
+
 
 using namespace std::chrono_literals;
 
@@ -64,6 +67,9 @@ public:
         contour_image_pub_ = node_->create_publisher<sensor_msgs::msg::Image>("/contour_image", 10);
 
 
+        // Initialize TF broadcaster
+        tf_broadcaster_ = std::make_shared<tf2_ros::TransformBroadcaster>(node_);
+
 
 
     // Set the maximum velocity scaling factor (optional)
@@ -72,39 +78,7 @@ public:
 
 ///////////////////////////////////////////////////////////////////
 
-    auto robot_model_loader = std::make_shared<robot_model_loader::RobotModelLoader>(node_, "robot_description");
-    auto robot_model = robot_model_loader->getModel();
-    if (!robot_model)
-    {
-        RCLCPP_ERROR(node->get_logger(), "Failed to load robot model.");
-        //return 1;
-    }
-
-
-    auto planning_scene_monitor = std::make_shared<planning_scene_monitor::PlanningSceneMonitor>(node_, robot_model_loader);
-
-    if (!planning_scene_monitor->getPlanningScene())
-    {
-        RCLCPP_ERROR(node->get_logger(), "Planning Scene Monitor failed to initialize.");
-       // return 1;
-    }
-
-    // Start state monitor
-    planning_scene_monitor->startStateMonitor("/joint_states");
-
-    // Check if the state monitor has started successfully
-    if (planning_scene_monitor->getStateMonitor())
-    {
-        RCLCPP_INFO(node->get_logger(), "State monitor started successfully. Monitoring robot state...");
-    }
-    else
-    {
-        RCLCPP_ERROR(node->get_logger(), "Failed to start state monitor.");
-        //return 1;
-    }
-
-
-    //move_group_arm_.startStateMonitor(5.0);
+   //move_group_arm_.startStateMonitor(5.0);
 
 ///////////////////////////////////////////////////////////////////
 
@@ -160,7 +134,7 @@ public:
             int cy = int(m.m01 / m.m00);
 
             // Draw a circle at the centroid
-            cv::circle(img, cv::Point(cx, cy), 5, cv::Scalar(0, 255, 0), -1);
+            cv::circle(img, cv::Point(cx, cy), 10, cv::Scalar(0, 255, 0), -1);
 
             // Store centroid for 3D point extraction
             centroid_ = {cx, cy};
@@ -174,6 +148,34 @@ public:
         //cv::imshow("Red Object Detection", img);
         //cv::waitKey(1);
     }
+
+
+
+    // Function to publish TF
+    void publish_tf(double x, double y, double z) {
+        geometry_msgs::msg::TransformStamped transformStamped;
+
+        transformStamped.header.stamp = node_->get_clock()->now();
+        transformStamped.header.frame_id = "camera_head_depth_frame";   // Parent frame
+        transformStamped.child_frame_id = "detected_object"; // Child frame
+
+        transformStamped.transform.translation.x = x;
+        transformStamped.transform.translation.y = y;
+        transformStamped.transform.translation.z = z;
+
+
+        transformStamped.transform.rotation.x = 0.0;
+        transformStamped.transform.rotation.y = 0.0;
+        transformStamped.transform.rotation.z = 0.0;
+        transformStamped.transform.rotation.w = 1.0; // Identity quaternion (no rotation)
+
+        tf_broadcaster_->sendTransform(transformStamped);
+
+        RCLCPP_INFO(node_->get_logger(), "Published TF: [%f, %f, %f]", x, y, z);
+    }
+
+
+
 
     // Callback for point cloud topic
     void pointcloud_callback(const sensor_msgs::msg::PointCloud2::SharedPtr msg) {
@@ -189,6 +191,11 @@ public:
             pt.z = data_ptr[2];
 
             RCLCPP_INFO(node_->get_logger(), "3D Point: x=%f, y=%f, z=%f", pt.x, pt.y, pt.z);
+
+            // Publish the TF
+            publish_tf( pt.x, pt.y, pt.z);
+
+
         }
     }
 
@@ -774,6 +781,7 @@ private:
   rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr pointcloud_sub_;
   rclcpp::Publisher<sensor_msgs::msg::Image>::SharedPtr contour_image_pub_; // Publisher for contour image
 
+  std::shared_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster_; // TF broadcaster
 
 
 };
