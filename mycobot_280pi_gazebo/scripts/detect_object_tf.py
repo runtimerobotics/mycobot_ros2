@@ -90,13 +90,19 @@ class RedColorDetection(Node):
                     cy = int(M["m01"] / M["m00"])
 
                     print("Centroid:", cx, cy)
-                    # Get depth information at the centroid position
-                    depth = self.get_depth_at_centroid(cx, cy, pc_data)
-                    print('Depth value', depth)
-                    self.publish_tf(depth)
+                    #Draw centroid
+                    cv2.circle(contour_image, (cx,cy), 10, (0,255,0), -1)
 
-        # Publish the contour image
-        self.publish_contour_image(contour_image)
+                    # Get depth information at the centroid position
+                    try:
+                        depth = self.get_depth_at_centroid(cx, cy, pc_data)
+                        self.publish_tf(depth)
+                    except:
+                        print("Exception in getting depth")
+                        pass
+
+                    # Publish the contour image
+                    self.publish_contour_image(contour_image)
 
     def detect_red_color(self, image):
         """Detect red color in the image and return a binary mask."""
@@ -123,13 +129,13 @@ class RedColorDetection(Node):
         """Publish the transform for detected object."""
         transform = TransformStamped()
         transform.header.stamp = self.get_clock().now().to_msg()
-        transform.header.frame_id = 'camera_head_depth_optical_frame'
+        transform.header.frame_id = 'camera_head_depth_frame'
         transform.child_frame_id = 'detect_object'
 
         # Assuming the depth from point cloud is the Z coordinate
-        transform.transform.translation.x = float(depth[1])
-        transform.transform.translation.y = float(depth[2])
-        transform.transform.translation.z = float(depth[0])
+        transform.transform.translation.x = float(depth[0])
+        transform.transform.translation.y = float(depth[1])
+        transform.transform.translation.z = float(depth[2])
 
         # Identity rotation (no rotation assumed for simplicity)
         transform.transform.rotation.x = 0.0

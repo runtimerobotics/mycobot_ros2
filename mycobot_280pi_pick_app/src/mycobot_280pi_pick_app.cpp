@@ -25,6 +25,13 @@
 #include <moveit/robot_state/robot_state.h>
 
 
+#include <sensor_msgs/msg/image.hpp>
+#include <sensor_msgs/msg/point_cloud2.hpp>
+#include <cv_bridge/cv_bridge.hpp>
+#include <opencv2/opencv.hpp>
+#include <geometry_msgs/msg/point.hpp>
+
+
 #include <vector>
 #include <signal.h>
 #include <cmath>
@@ -44,6 +51,20 @@ public:
   // Constructor
   MoveIt_Task(const std::shared_ptr<rclcpp::Node> &node, moveit::planning_interface::MoveGroupInterface &move_group_arm, moveit::planning_interface::MoveGroupInterface &move_group_gripper,moveit::planning_interface::PlanningSceneInterface &planning_scene) : node_(node), move_group_arm_(move_group_arm), move_group_gripper_(move_group_gripper), planning_scene_(planning_scene)
   {
+
+
+        // Image and Point Cloud subscribers
+        image_sub_ = node_->create_subscription<sensor_msgs::msg::Image>(
+            "/camera_head/color/image_raw", 10, std::bind(&MoveIt_Task::image_callback, this, std::placeholders::_1));
+
+        pointcloud_sub_ = node_->create_subscription<sensor_msgs::msg::PointCloud2>(
+            "/camera_head/depth/color/points", 10, std::bind(&MoveIt_Task::pointcloud_callback, this, std::placeholders::_1));
+
+        // Image publisher for the contour image
+        contour_image_pub_ = node_->create_publisher<sensor_msgs::msg::Image>("/contour_image", 10);
+
+
+
 
     // Set the maximum velocity scaling factor (optional)
     move_group_arm_.setMaxVelocityScalingFactor(0.75/2);
@@ -107,6 +128,70 @@ public:
   {
     RCLCPP_WARN(node_->get_logger(), "Closing application...");
   }
+
+
+    // Callback for image topic
+    void image_callback(const sensor_msgs::msg::Image::SharedPtr msg) {
+        cv::Mat img = cv_bridge::toCvCopy(msg, "bgr8")->image;
+        cv::Mat hsv_img, mask1, mask2, combined_mask;
+
+        // Convert image to HSV format
+        cv::cvtColor(img, hsv_img, cv::COLOR_BGR2HSV);
+
+        // Detect lower and upper ranges of red color
+        cv::inRange(hsv_img, cv::Scalar(0, 120, 70), cv::Scalar(10, 255, 255), mask1);
+        cv::inRange(hsv_img, cv::Scalar(170, 120, 70), cv::Scalar(180, 255, 255), mask2);
+
+        combined_mask = mask1 | mask2;
+
+        // Find contours in the mask
+        std::vector<std::vector<cv::Point>> contours;
+        cv::findContours(combined_mask, contours, cv::RETR_TREE, cv::CHAIN_APPROX_SIMPLE);
+
+        if (!contours.empty()) {
+            // Find the largest contour based on area
+            auto largest_contour = *std::max_element(contours.begin(), contours.end(), [](auto &a, auto &b) {
+                return cv::contourArea(a) < cv::contourArea(b);
+            });
+
+            // Calculate the centroid of the largest contour
+            cv::Moments m = cv::moments(largest_contour);
+            int cx = int(m.m10 / m.m00);
+            int cy = int(m.m01 / m.m00);
+
+            // Draw a circle at the centroid
+            cv::circle(img, cv::Point(cx, cy), 5, cv::Scalar(0, 255, 0), -1);
+
+            // Store centroid for 3D point extraction
+            centroid_ = {cx, cy};
+        }
+
+        // Republish the contour image
+        auto contour_msg = cv_bridge::CvImage(msg->header, "bgr8", img).toImageMsg();
+        contour_image_pub_->publish(*contour_msg);
+
+        // Display the image locally (optional)
+        //cv::imshow("Red Object Detection", img);
+        //cv::waitKey(1);
+    }
+
+    // Callback for point cloud topic
+    void pointcloud_callback(const sensor_msgs::msg::PointCloud2::SharedPtr msg) {
+        if (centroid_.has_value()) {
+            int point_index = (centroid_->y * msg->width + centroid_->x);
+
+            // Access the data in the point cloud
+            float* data_ptr = reinterpret_cast<float*>(&msg->data[point_index * msg->point_step]);
+
+            geometry_msgs::msg::Point pt;
+            pt.x = data_ptr[0];
+            pt.y = data_ptr[1];
+            pt.z = data_ptr[2];
+
+            RCLCPP_INFO(node_->get_logger(), "3D Point: x=%f, y=%f, z=%f", pt.x, pt.y, pt.z);
+        }
+    }
+
 
 
 //Move a particular joint
@@ -683,6 +768,13 @@ private:
   moveit::planning_interface::PlanningSceneInterface planning_scene_;
 
   int max_planning_tries = 100;
+
+  std::optional<cv::Point> centroid_;
+  rclcpp::Subscription<sensor_msgs::msg::Image>::SharedPtr image_sub_;
+  rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr pointcloud_sub_;
+  rclcpp::Publisher<sensor_msgs::msg::Image>::SharedPtr contour_image_pub_; // Publisher for contour image
+
+
 
 };
 int main(int argc, char* argv[])
