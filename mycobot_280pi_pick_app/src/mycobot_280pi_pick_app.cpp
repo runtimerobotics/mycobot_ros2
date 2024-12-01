@@ -134,7 +134,7 @@ public:
             int cy = int(m.m01 / m.m00);
 
             // Draw a circle at the centroid
-            cv::circle(img, cv::Point(cx, cy), 10, cv::Scalar(0, 255, 0), -1);
+            cv::circle(img, cv::Point(cx, cy), 15, cv::Scalar(0, 255, 0), -1);
 
             // Store centroid for 3D point extraction
             centroid_ = {cx, cy};
