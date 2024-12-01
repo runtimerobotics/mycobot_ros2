@@ -71,6 +71,11 @@ public:
         tf_broadcaster_ = std::make_shared<tf2_ros::TransformBroadcaster>(node_);
 
 
+        tf_buffer_ = std::make_shared<tf2_ros::Buffer>(node_->get_clock());
+
+        tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
+
+
 
     // Set the maximum velocity scaling factor (optional)
     move_group_arm_.setMaxVelocityScalingFactor(0.75/2);
@@ -172,8 +177,35 @@ public:
         tf_broadcaster_->sendTransform(transformStamped);
 
         RCLCPP_INFO(node_->get_logger(), "Published TF: [%f, %f, %f]", x, y, z);
+
+        follow_tf_frame("detected_object");
     }
 
+
+
+    // Function to publish TF
+    void publish_tf_goal(double x, double y, double z) {
+        geometry_msgs::msg::TransformStamped transformStamped;
+
+        transformStamped.header.stamp = node_->get_clock()->now();
+        transformStamped.header.frame_id = "g_base";   // Parent frame
+        transformStamped.child_frame_id = "goal_pose"; // Child frame
+
+        transformStamped.transform.translation.x = x;
+        transformStamped.transform.translation.y = y;
+        transformStamped.transform.translation.z = z;
+
+
+        transformStamped.transform.rotation.x = 0.0;
+        transformStamped.transform.rotation.y = 0.0;
+        transformStamped.transform.rotation.z = 0.0;
+        transformStamped.transform.rotation.w = 1.0; // Identity quaternion (no rotation)
+
+        tf_broadcaster_->sendTransform(transformStamped);
+
+        RCLCPP_INFO(node_->get_logger(), "Published TF: [%f, %f, %f]", x, y, z);
+
+    }
 
 
 
@@ -198,6 +230,58 @@ public:
 
         }
     }
+
+
+
+    void follow_tf_frame(const std::string &target_frame) {
+        try {
+            // Lookup the transform from the base frame to the target frame
+            geometry_msgs::msg::TransformStamped transform_stamped =
+                tf_buffer_->lookupTransform("g_base", target_frame, tf2::TimePointZero);
+
+
+
+            // Convert to PoseStamped for MoveIt
+            geometry_msgs::msg::PoseStamped target_pose;
+            target_pose.header.frame_id = "gripper_base";
+            target_pose.header.stamp = node_->get_clock()->now();
+
+            target_pose.pose.position.x = transform_stamped.transform.translation.x;
+            target_pose.pose.position.y = transform_stamped.transform.translation.y;
+            target_pose.pose.position.z = transform_stamped.transform.translation.z;
+
+            //Publish TF of goal
+            publish_tf_goal(target_pose.pose.position.x, target_pose.pose.position.y, target_pose.pose.position.z);
+
+
+            target_pose.pose.orientation.x = 0;
+            target_pose.pose.orientation.y = 0;
+            target_pose.pose.orientation.z = 0;
+            target_pose.pose.orientation.w = 1;
+
+
+            RCLCPP_INFO(node_->get_logger(), "Translation target: x=%f, y=%f, z=%f", target_pose.pose.position.x, 
+                                                                                    target_pose.pose.position.y, 
+                                                                                    target_pose.pose.position.z);
+
+            // Set the target pose for the MoveIt interface
+            move_group_arm_.setPoseTarget(target_pose);
+
+            // Plan and execute
+            moveit::planning_interface::MoveGroupInterface::Plan plan;
+            if (move_group_arm_.plan(plan) == moveit::core::MoveItErrorCode::SUCCESS) {
+                move_group_arm_.execute(plan);
+                RCLCPP_INFO(node_->get_logger(), "Motion executed successfully.");
+            } else {
+                RCLCPP_WARN(node_->get_logger(), "Failed to plan motion.");
+            }
+
+        } catch (tf2::TransformException &ex) {
+            RCLCPP_ERROR(node_->get_logger(), "Transform error: %s", ex.what());
+        }
+    }
+
+
 
 
 
@@ -782,6 +866,8 @@ private:
   rclcpp::Publisher<sensor_msgs::msg::Image>::SharedPtr contour_image_pub_; // Publisher for contour image
 
   std::shared_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster_; // TF broadcaster
+  std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
+  std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
 
 
 };
@@ -805,7 +891,9 @@ int main(int argc, char* argv[])
   while (rclcpp::ok()) {
 
 
+    rclcpp::sleep_for(std::chrono::milliseconds(2000));
 
+/*
     move_obj.move_home("home");
     rclcpp::sleep_for(std::chrono::milliseconds(2000));
     move_obj.move_gripper("open");
@@ -821,10 +909,11 @@ int main(int argc, char* argv[])
     rclcpp::sleep_for(std::chrono::milliseconds(2000));
     move_obj.move_gripper("open");
     rclcpp::sleep_for(std::chrono::milliseconds(2000));
-
+*/
 
   }
 
+  rclcpp::shutdown();
 
 
   return 0;

@@ -11,8 +11,9 @@ Panels:
         - /MotionPlanning1/Planning Metrics1
         - /MotionPlanning1/Planned Path1
         - /Image1
+        - /TF1/Frames1
       Splitter Ratio: 0.5
-    Tree Height: 140
+    Tree Height: 151
   - Class: rviz_common/Help
     Name: Help
   - Class: rviz_common/Views
@@ -417,57 +418,59 @@ Visualization Manager:
       Enabled: true
       Frame Timeout: 15
       Frames:
-        All Enabled: true
+        All Enabled: false
         camera_head_color_frame:
-          Value: true
+          Value: false
         camera_head_color_optical_frame:
-          Value: true
+          Value: false
         camera_head_depth_frame:
           Value: true
         camera_head_depth_optical_frame:
-          Value: true
+          Value: false
         camera_head_infra1_frame:
-          Value: true
+          Value: false
         camera_head_infra1_optical_frame:
-          Value: true
+          Value: false
         camera_head_infra2_frame:
-          Value: true
+          Value: false
         camera_head_infra2_optical_frame:
-          Value: true
+          Value: false
         camera_head_link:
+          Value: false
+        detected_object:
           Value: true
         g_base:
           Value: true
         gripper_base:
-          Value: true
+          Value: false
         gripper_left1:
-          Value: true
+          Value: false
         gripper_left2:
-          Value: true
+          Value: false
         gripper_left3:
-          Value: true
+          Value: false
         gripper_right1:
-          Value: true
+          Value: false
         gripper_right2:
-          Value: true
+          Value: false
         gripper_right3:
-          Value: true
+          Value: false
         joint1:
-          Value: true
+          Value: false
         joint2:
-          Value: true
+          Value: false
         joint3:
-          Value: true
+          Value: false
         joint4:
-          Value: true
+          Value: false
         joint5:
-          Value: true
+          Value: false
         joint6:
-          Value: true
+          Value: false
         joint6_flange:
-          Value: true
+          Value: false
         torso_link:
-          Value: true
+          Value: false
         world:
           Value: true
       Marker Scale: 1
@@ -504,6 +507,8 @@ Visualization Manager:
                 camera_head_depth_frame:
                   camera_head_depth_optical_frame:
                     {}
+                  detected_object:
+                    {}
                 camera_head_infra1_frame:
                   camera_head_infra1_optical_frame:
                     {}
@@ -530,7 +535,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz_default_plugins/Orbit
-      Distance: 2.07204270362854
+      Distance: 1.8293607234954834
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -545,10 +550,10 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.5349997878074646
+      Pitch: 0.3749997019767761
       Target Frame: world
       Value: Orbit (rviz_default_plugins)
-      Yaw: 5.030174255371094
+      Yaw: 4.995176792144775
     Saved: ~
 Window Geometry:
   Displays:
@@ -564,7 +569,7 @@ Window Geometry:
     collapsed: false
   MotionPlanning - Trajectory Slider:
     collapsed: false
-  QMainWindow State: 000000ff00000000fd0000000100000000000002b4000003a2fc0200000006fb00000044004d006f00740069006f006e0050006c0061006e006e0069006e00670020002d0020005400720061006a006500630074006f0072007900200053006c00690064006500720000000000ffffffff0000003f00fffffffb000000100044006900730070006c006100790073010000003b000000c7000000c700fffffffb0000001c004d006f00740069006f006e0050006c0061006e006e0069006e00670100000108000001740000016900fffffffb0000000800480065006c0070000000029a0000006e0000006e00fffffffb0000000a005600690065007700730000000283000000a0000000a000fffffffb0000000a0049006d00610067006501000002820000015b0000002800ffffff0000048c000003a200000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
+  QMainWindow State: 000000ff00000000fd0000000100000000000002b4000003a2fc0200000006fb00000044004d006f00740069006f006e0050006c0061006e006e0069006e00670020002d0020005400720061006a006500630074006f0072007900200053006c00690064006500720000000000ffffffff0000003f00fffffffb000000100044006900730070006c006100790073010000003b000000d2000000c700fffffffb0000001c004d006f00740069006f006e0050006c0061006e006e0069006e00670100000113000001690000016900fffffffb0000000800480065006c0070000000029a0000006e0000006e00fffffffb0000000a005600690065007700730000000283000000a0000000a000fffffffb0000000a0049006d00610067006501000002820000015b0000002800ffffff0000048c000003a200000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
   Views:
     collapsed: false
   Width: 1862
