@@ -38,6 +38,14 @@
       </uri>
     </include>
 
+
+    <include>
+      <uri>model://coke_can</uri>
+      <pose>0.3 0.0 0.15 0 0 2.3</pose>
+      <scale>0.1 0.1 0.1</scale>
+    </include>
+
+
     <!-- Include a model of the Ground Plane from an external URI -->
     <include>
       <uri>

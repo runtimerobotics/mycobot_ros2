@@ -16,7 +16,7 @@ find_package(trajectory_msgs REQUIRED)
 find_package(xacro REQUIRED)
 
 install (
-  DIRECTORY launch urdf config worlds 
+  DIRECTORY launch urdf config worlds models
   DESTINATION share/${PROJECT_NAME}
 )
 
