@@ -79,6 +79,7 @@ RUN apt-get update && apt-get install -y \
     ros-${ROS_DISTRO}-rqt-tf-tree \
     ros-${ROS_DISTRO}-rqt-graph \
     ros-${ROS_DISTRO}-rqt-joint-trajectory-controller \
+    ros-${ROS_DISTRO}-sensor-msgs-py \   
     && rm -rf /var/lib/apt/lists/*
 
 
@@ -106,7 +107,7 @@ WORKDIR ${ROS_WS}
 # Switch to mycobot user
 USER mycobot
 
-RUN pip install pymycobot --user
+RUN pip install pymycobot pcl --user
 
 RUN /bin/bash -c "source /opt/ros/${ROS_DISTRO}/setup.bash && \
     colcon build --symlink-install --executor sequential"

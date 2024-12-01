@@ -23,6 +23,7 @@ install (
 install(
   PROGRAMS
     scripts/republish_joints.py
+    scripts/detect_object_tf.py
   DESTINATION lib/${PROJECT_NAME}
 )
 
