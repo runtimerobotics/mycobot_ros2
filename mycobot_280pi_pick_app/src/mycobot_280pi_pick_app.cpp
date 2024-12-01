@@ -56,16 +56,6 @@ public:
   {
 
 
-        // Image and Point Cloud subscribers
-        image_sub_ = node_->create_subscription<sensor_msgs::msg::Image>(
-            "/camera_head/color/image_raw", 10, std::bind(&MoveIt_Task::image_callback, this, std::placeholders::_1));
-
-        pointcloud_sub_ = node_->create_subscription<sensor_msgs::msg::PointCloud2>(
-            "/camera_head/depth/color/points", 10, std::bind(&MoveIt_Task::pointcloud_callback, this, std::placeholders::_1));
-
-        // Image publisher for the contour image
-        contour_image_pub_ = node_->create_publisher<sensor_msgs::msg::Image>("/contour_image", 10);
-
 
         // Initialize TF broadcaster
         tf_broadcaster_ = std::make_shared<tf2_ros::TransformBroadcaster>(node_);
@@ -93,13 +83,35 @@ public:
     // move_group_.setPlannerId("APSConfigDefault");
 
     move_group_arm_.setPlanningPipelineId("ompl");     // Set planning pipeline
-    move_group_arm_.setGoalPositionTolerance(0.001);    // 1 mm tolerance
-    move_group_arm_.setGoalOrientationTolerance(0.001); // Tolerance for orientation (0.01 radians = 0.57 degress)
+    move_group_arm_.setGoalPositionTolerance(1);    // 1 mm tolerance
+    move_group_arm_.setGoalOrientationTolerance(1); // Tolerance for orientation (0.01 radians = 0.57 degress)
 
     // Set planning time and planning attempts
-    move_group_arm_.setPlanningTime(4.0);     // 10 seconds max planning time
+    move_group_arm_.setPlanningTime(5.0);     // 10 seconds max planning time
     move_group_arm_.setNumPlanningAttempts(10); // Try planning 5 times
- 
+
+    //Homing first
+    move_home("home");
+    //Goto
+    rclcpp::sleep_for(std::chrono::milliseconds(2000));
+    move_gripper("open");
+    std::vector<double> joint_goal_degrees_pose1 = {-0.2443,-1.0821,0.4189,-0.9250,0.1222,-0.2793};
+    //move_abs_joints(joint_goal_degrees_pose1);
+    //rclcpp::sleep_for(std::chrono::milliseconds(2000));
+
+
+
+    // Image and Point Cloud subscribers
+    image_sub_ = node_->create_subscription<sensor_msgs::msg::Image>(
+            "/camera_head/color/image_raw", 10, std::bind(&MoveIt_Task::image_callback, this, std::placeholders::_1));
+
+    pointcloud_sub_ = node_->create_subscription<sensor_msgs::msg::PointCloud2>(
+            "/camera_head/depth/color/points", 10, std::bind(&MoveIt_Task::pointcloud_callback, this, std::placeholders::_1));
+
+    // Image publisher for the contour image
+    contour_image_pub_ = node_->create_publisher<sensor_msgs::msg::Image>("/contour_image", 10);
+
+
 
   }
   // Destructor
@@ -248,16 +260,17 @@ public:
 
             target_pose.pose.position.x = transform_stamped.transform.translation.x;
             target_pose.pose.position.y = transform_stamped.transform.translation.y;
-            target_pose.pose.position.z = transform_stamped.transform.translation.z;
+            target_pose.pose.position.z = 0.12;
+            //target_pose.pose.position.z = transform_stamped.transform.translation.z;
 
             //Publish TF of goal
             publish_tf_goal(target_pose.pose.position.x, target_pose.pose.position.y, target_pose.pose.position.z);
 
 
-            target_pose.pose.orientation.x = 0;
-            target_pose.pose.orientation.y = 0;
-            target_pose.pose.orientation.z = 0;
-            target_pose.pose.orientation.w = 1;
+            //target_pose.pose.orientation.x = 0;
+            //target_pose.pose.orientation.y = 0;
+            //target_pose.pose.orientation.z = 0;
+            //target_pose.pose.orientation.w = 1;
 
 
             RCLCPP_INFO(node_->get_logger(), "Translation target: x=%f, y=%f, z=%f", target_pose.pose.position.x, 
@@ -265,6 +278,12 @@ public:
                                                                                     target_pose.pose.position.z);
 
             // Set the target pose for the MoveIt interface
+
+            move_abs_cartesian(target_pose.pose.position.x,
+                                    target_pose.pose.position.y,
+                                    target_pose.pose.position.z);
+            
+            /*                        
             move_group_arm_.setPoseTarget(target_pose);
 
             // Plan and execute
@@ -275,12 +294,12 @@ public:
             } else {
                 RCLCPP_WARN(node_->get_logger(), "Failed to plan motion.");
             }
-
+*/
         } catch (tf2::TransformException &ex) {
             RCLCPP_ERROR(node_->get_logger(), "Transform error: %s", ex.what());
         }
     }
-
+        
 
 
 
@@ -562,27 +581,27 @@ bool move_joint(int index, double joint_value)
 
     //rclcpp::sleep_for(std::chrono::seconds(2));
 
-    geometry_msgs::msg::PoseStamped current_pose = move_group_arm_.getCurrentPose(); // Get the current pose (position and orientation) of the end-effector
+    //geometry_msgs::msg::PoseStamped current_pose = move_group_arm_.getCurrentPose(); // Get the current pose (position and orientation) of the end-effector
 
     std::vector<geometry_msgs::msg::Pose> waypoints;          // Define waypoints for the Cartesian motion (a series of poses the robot will follow)
-    geometry_msgs::msg::Pose target_pose = current_pose.pose; // Initialize the target pose with the current pose
+    geometry_msgs::msg::Pose target_pose ; // Initialize the target pose with the current pose
 
-    target_pose.position.x = target_pose.position.x + x; // Update the target pose with the absolute values provided for x, y, and z coordinates
-    target_pose.position.y = target_pose.position.y + y;
-    target_pose.position.z = target_pose.position.z + z;
+    target_pose.position.x =  x; // Update the target pose with the absolute values provided for x, y, and z coordinates
+    target_pose.position.y =  y;
+    target_pose.position.z =  z;
     waypoints.push_back(target_pose); // Add the updated target pose to the waypoints
 
 
     // Plan the Cartesian path using the waypoints
     moveit_msgs::msg::RobotTrajectory trajectory;
-    const double eef_step = 0.001;      // End-effector step size in meters
+    const double eef_step = 0.1;      // End-effector step size in meters
     const double jump_threshold = 0.0; // Disable jump threshold (prevents sudden movements)
 
     int try_count = 0;
 
     // Execute the trajectory if at least 90% of the path was computed successfully
-    while (try_count<20)
-    {
+    //while (try_count<20)
+    //{
 
 
       //if(mode == "save")
@@ -591,7 +610,7 @@ bool move_joint(int index, double joint_value)
       double fraction = move_group_arm_.computeCartesianPath(waypoints, eef_step, jump_threshold, trajectory);
       RCLCPP_INFO(node_->get_logger(), "Cartesian path (%.2f%% achieved)", fraction * 100.0); // Print the result of Cartesian path planning (the percentage of the Cartesian path that was successfully computed)
 
-      if (fraction > 0.7)
+      if (fraction > 0.3)
       {
         // Create a MoveGroupInterface plan and assign the computed trajectory to it
         moveit::planning_interface::MoveGroupInterface::Plan cartesian_plan;
@@ -604,27 +623,29 @@ bool move_joint(int index, double joint_value)
         //Saving trajectory
         //save_trajectory(file_name);
 
-        ++try_count;
+        //++try_count;
         return true;
       }
+      /*
       else if(try_count < 10)
       { 
         ++try_count;
         RCLCPP_WARN(node_->get_logger(), "Failed to compute a valid Cartesian path. Retrying...");
         continue;
       }
+      */
       else
       {
         RCLCPP_WARN(node_->get_logger(), "Failed to compute a valid Cartesian path after several attempts. Stopping...");
         //stopRobot();        // Stop the robot
-        rclcpp::shutdown(); // Shut down ROS safely
-        exit(0);            // Exit the application
+        //rclcpp::shutdown(); // Shut down ROS safely
+        //exit(0);            // Exit the application
         return false;
       }
     
      //}
    
-    }
+    //}
 
 
     exit(0);            // Exit the application
