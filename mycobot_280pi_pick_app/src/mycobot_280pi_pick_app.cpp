@@ -278,7 +278,7 @@ public:
 
         RCLCPP_WARN(node_->get_logger(), "PCL callabck 2..");
 
-
+            try{
             geometry_msgs::msg::Point pt;
             pt.x = data_ptr[0];
             pt.y = data_ptr[1];
@@ -288,7 +288,15 @@ public:
 
             // Publish the TF
             publish_tf( pt.x, pt.y, pt.z);
-        RCLCPP_WARN(node_->get_logger(), "PCL callabck 3..");
+            
+            }
+
+            catch(int e)
+            {
+              RCLCPP_INFO(node_->get_logger(), "Exception in getting 3D coordinates");
+            }
+
+           RCLCPP_WARN(node_->get_logger(), "PCL callabck 3..");
 
 
         }
