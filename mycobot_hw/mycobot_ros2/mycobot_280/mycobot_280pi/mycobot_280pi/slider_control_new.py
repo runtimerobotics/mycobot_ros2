@@ -71,7 +71,7 @@ class Slider_Subscriber(Node):
                 print("New values detected")
                 #if(not self.mc.is_gripper_moving()):
                 self.mc.send_angles(arm_joints, 25)
-            self.prev_list = self.current_list
+        self.prev_list = self.current_list
 	#Sending to gripper
         gripper_value=data_list[-1:]
 	
