@@ -95,9 +95,9 @@ public:
     //Homing first
     move_home("home");
     //Goto
-    rclcpp::sleep_for(std::chrono::milliseconds(2000));
-    move_gripper("open");
-    std::vector<double> joint_goal_degrees_pose1 = {-0.2443,-1.0821,0.4189,-0.9250,0.1222,-0.2793};
+    rclcpp::sleep_for(std::chrono::milliseconds(5000));
+    //move_gripper("open");
+    //std::vector<double> joint_goal_degrees_pose1 = {-0.2443,-1.0821,0.4189,-0.9250,0.1222,-0.2793};
     //move_abs_joints(joint_goal_degrees_pose1);
     //rclcpp::sleep_for(std::chrono::milliseconds(2000));
 
