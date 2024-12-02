@@ -1,0 +1,19 @@
+<?xml version="1.0" ?>
+<robot xmlns:xacro="http://wiki.ros.org/xacro" name="mycobot_280pi">
+
+
+<xacro:include filename="$(find mycobot_280pi_description)/urdf/mycobot_280_pi.urdf"/>
+<xacro:include filename="$(find mycobot_280pi_gazebo)/urdf/mycobot_280pi_gazebo_real.xacro"/>
+<xacro:include filename="$(find mycobot_280pi_gazebo)/urdf/mycobot_280pi_ros2_control.xacro"/>
+
+
+<link name="world"/>
+
+<joint name="virtual_joint" type="fixed">
+		<parent link="world"/>
+		<child link="g_base"/>
+		<origin xyz= "0 0 0" rpy = "0 0 0"/>  
+</joint>
+
+
+</robot>
