@@ -280,14 +280,14 @@ public:
 
             try{
             geometry_msgs::msg::Point pt;
-            pt.x = data_ptr[0];
-            pt.y = data_ptr[1];
-            pt.z = data_ptr[2];
+           // pt.x = data_ptr[0];
+          //  pt.y = data_ptr[1];
+          //  pt.z = data_ptr[2];
 
             RCLCPP_INFO(node_->get_logger(), "3D Point: x=%f, y=%f, z=%f", pt.x, pt.y, pt.z);
 
             // Publish the TF
-            publish_tf( pt.x, pt.y, pt.z);
+            //publish_tf( pt.x, pt.y, pt.z);
             
             }
 
