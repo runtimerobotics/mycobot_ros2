@@ -21,17 +21,34 @@ class Slider_Subscriber(Node):
 
         self.enable_hw=int(sys.argv[1])
 
+        self.prev_list = []
+        self.current_list = []
+
         if(self.enable_hw):
             self.mc = MyCobot("/dev/ttyAMA0", 1000000)
             print("Initialize control node and robot")
             time.sleep(0.05)
             self.mc.set_fresh_mode(1)
             time.sleep(0.05)
+            #Initialize gripper
+            self.mc.init_gripper()
+            time.sleep(0.05)
         self.prev_grip_val=0
 
     def scale_value(self,value, input_min, input_max, output_min, output_max):
     # Apply the scaling formula
         return ((value - input_min) / (input_max - input_min)) * (output_max - output_min) + output_min
+
+
+    def compare_and_detect_changes(self,previous_list, current_list):
+        if len(previous_list) != len(current_list):
+            return True  # Consider list lengths as a change
+
+        for i in range(len(previous_list)):
+            if previous_list[i] != current_list[i]:
+                return True  # Return immediately on detecting a change
+
+        return False  # No changes found
 
 
 
@@ -47,9 +64,14 @@ class Slider_Subscriber(Node):
         arm_joints=data_list[:-1]
         print("Arm joints:",arm_joints)
 
+        self.current_list = arm_joints
+
         if(self.enable_hw):
-            if(not self.mc.is_gripper_moving()):
+            if (self.compare_and_detect_changes(self.prev_list, self.current_list)):
+                print("New values detected")
+                #if(not self.mc.is_gripper_moving()):
                 self.mc.send_angles(arm_joints, 25)
+            self.prev_list = self.current_list
 	#Sending to gripper
         gripper_value=data_list[-1:]
 	
@@ -69,9 +91,9 @@ class Slider_Subscriber(Node):
 
         if(self.enable_hw):
             if(self.current_grip_val != self.prev_grip_val):
-                    if(not self.mc.is_gripper_moving()):
-                        print("Sending to gripper:",self.current_grip_val)
-                        self.mc.set_gripper_value(self.current_grip_val,70,1)
+                #    if(not self.mc.is_gripper_moving()):
+                print("Sending to gripper:",self.current_grip_val)
+                self.mc.set_gripper_value(self.current_grip_val,90,1,is_torque=True)
                 #self.mc.set_gripper_state(1,70);
         #self.mc.set_gripper_value(self.current_grip_val,20,1)
 
