@@ -129,8 +129,8 @@ public:
     image_sub_ = node_->create_subscription<sensor_msgs::msg::Image>(
             "/camera/camera/color/image_raw", 10, std::bind(&MoveIt_Task::image_callback, this, std::placeholders::_1));
 
-    //pointcloud_sub_ = node_->create_subscription<sensor_msgs::msg::PointCloud2>(
-    //        "/camera/camera/depth/color/points", 10, std::bind(&MoveIt_Task::pointcloud_callback, this, std::placeholders::_1));
+    pointcloud_sub_ = node_->create_subscription<sensor_msgs::msg::PointCloud2>(
+            "/camera/camera/depth/color/points", 10, std::bind(&MoveIt_Task::pointcloud_callback, this, std::placeholders::_1));
 
 
     }
@@ -151,7 +151,7 @@ public:
         cv::Mat hsv_img, mask1, mask2, combined_mask;
 
 
-    RCLCPP_WARN(node_->get_logger(), "Image callabck 1..");
+    //RCLCPP_WARN(node_->get_logger(), "Image callabck 1..");
 
         // Convert image to HSV format
         cv::cvtColor(img, hsv_img, cv::COLOR_BGR2HSV);
@@ -166,7 +166,7 @@ public:
         std::vector<std::vector<cv::Point>> contours;
         cv::findContours(combined_mask, contours, cv::RETR_TREE, cv::CHAIN_APPROX_SIMPLE);
 
-    RCLCPP_WARN(node_->get_logger(), "Image callabck 2..");
+    //RCLCPP_WARN(node_->get_logger(), "Image callabck 2..");
 
 
         if (!contours.empty()) {
@@ -188,13 +188,13 @@ public:
         }
 
 
-        RCLCPP_WARN(node_->get_logger(), "Image callabck 3..");
+      //  RCLCPP_WARN(node_->get_logger(), "Image callabck 3..");
 
         // Republish the contour image
         auto contour_msg = cv_bridge::CvImage(msg->header, "bgr8", img).toImageMsg();
         contour_image_pub_->publish(*contour_msg);
 
-        RCLCPP_WARN(node_->get_logger(), "Image callabck 4..");
+      //  RCLCPP_WARN(node_->get_logger(), "Image callabck 4..");
 
         // Display the image locally (optional)
         //cv::imshow("Red Object Detection", img);

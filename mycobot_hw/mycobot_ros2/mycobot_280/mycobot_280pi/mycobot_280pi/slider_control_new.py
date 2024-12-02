@@ -93,7 +93,7 @@ class Slider_Subscriber(Node):
             if(self.current_grip_val != self.prev_grip_val):
                 #    if(not self.mc.is_gripper_moving()):
                 print("Sending to gripper:",self.current_grip_val)
-                self.mc.set_gripper_value(self.current_grip_val,90,1,is_torque=True)
+                self.mc.set_gripper_value(self.current_grip_val,90,1)
                 #self.mc.set_gripper_state(1,70);
         #self.mc.set_gripper_value(self.current_grip_val,20,1)
 
