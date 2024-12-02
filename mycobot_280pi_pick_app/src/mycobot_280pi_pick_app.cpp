@@ -56,6 +56,7 @@ public:
   {
 
         node_->declare_parameter<bool>("sim", true);
+        centroid_ = {640/2, 480/2};
 
 
         // Initialize TF broadcaster
@@ -102,14 +103,20 @@ public:
 
     node_->get_parameter("sim", sim);
 
+    // Image publisher for the contour image
+    contour_image_pub_ = node_->create_publisher<sensor_msgs::msg::Image>("/contour_image", 10);
+
+
     if(sim)
     {
 
-    RCLCPP_WARN(node_->get_logger(), "Simulation setting loaded..");
+    RCLCPP_WARN(node_->get_logger(), "Simulation setting loaded 1..");
 
     // Image and Point Cloud subscribers
     image_sub_ = node_->create_subscription<sensor_msgs::msg::Image>(
             "/camera_head/color/image_raw", 10, std::bind(&MoveIt_Task::image_callback, this, std::placeholders::_1));
+
+    RCLCPP_WARN(node_->get_logger(), "Simulation setting loaded 2..");
 
     pointcloud_sub_ = node_->create_subscription<sensor_msgs::msg::PointCloud2>(
             "/camera_head/depth/color/points", 10, std::bind(&MoveIt_Task::pointcloud_callback, this, std::placeholders::_1));
@@ -127,9 +134,6 @@ public:
 
 
     }
-    // Image publisher for the contour image
-    contour_image_pub_ = node_->create_publisher<sensor_msgs::msg::Image>("/contour_image", 10);
-
 
 
   }
@@ -142,8 +146,12 @@ public:
 
     // Callback for image topic
     void image_callback(const sensor_msgs::msg::Image::SharedPtr msg) {
+
         cv::Mat img = cv_bridge::toCvCopy(msg, "bgr8")->image;
         cv::Mat hsv_img, mask1, mask2, combined_mask;
+
+
+    RCLCPP_WARN(node_->get_logger(), "Image callabck 1..");
 
         // Convert image to HSV format
         cv::cvtColor(img, hsv_img, cv::COLOR_BGR2HSV);
@@ -157,6 +165,9 @@ public:
         // Find contours in the mask
         std::vector<std::vector<cv::Point>> contours;
         cv::findContours(combined_mask, contours, cv::RETR_TREE, cv::CHAIN_APPROX_SIMPLE);
+
+    RCLCPP_WARN(node_->get_logger(), "Image callabck 2..");
+
 
         if (!contours.empty()) {
             // Find the largest contour based on area
@@ -176,9 +187,14 @@ public:
             centroid_ = {cx, cy};
         }
 
+
+        RCLCPP_WARN(node_->get_logger(), "Image callabck 3..");
+
         // Republish the contour image
         auto contour_msg = cv_bridge::CvImage(msg->header, "bgr8", img).toImageMsg();
         contour_image_pub_->publish(*contour_msg);
+
+        RCLCPP_WARN(node_->get_logger(), "Image callabck 4..");
 
         // Display the image locally (optional)
         //cv::imshow("Red Object Detection", img);
@@ -250,11 +266,18 @@ public:
 
     // Callback for point cloud topic
     void pointcloud_callback(const sensor_msgs::msg::PointCloud2::SharedPtr msg) {
+
+
+        RCLCPP_WARN(node_->get_logger(), "PCL callabck 1..");
+
         if (centroid_.has_value()) {
             int point_index = (centroid_->y * msg->width + centroid_->x);
 
             // Access the data in the point cloud
             float* data_ptr = reinterpret_cast<float*>(&msg->data[point_index * msg->point_step]);
+
+        RCLCPP_WARN(node_->get_logger(), "PCL callabck 2..");
+
 
             geometry_msgs::msg::Point pt;
             pt.x = data_ptr[0];
@@ -265,6 +288,7 @@ public:
 
             // Publish the TF
             publish_tf( pt.x, pt.y, pt.z);
+        RCLCPP_WARN(node_->get_logger(), "PCL callabck 3..");
 
 
         }
