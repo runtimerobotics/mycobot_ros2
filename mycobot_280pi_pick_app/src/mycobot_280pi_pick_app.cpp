@@ -104,6 +104,9 @@ public:
 
     if(sim)
     {
+
+    RCLCPP_WARN(node_->get_logger(), "Simulation setting loaded..");
+
     // Image and Point Cloud subscribers
     image_sub_ = node_->create_subscription<sensor_msgs::msg::Image>(
             "/camera_head/color/image_raw", 10, std::bind(&MoveIt_Task::image_callback, this, std::placeholders::_1));
@@ -112,6 +115,8 @@ public:
             "/camera_head/depth/color/points", 10, std::bind(&MoveIt_Task::pointcloud_callback, this, std::placeholders::_1));
     }
     else{
+
+    RCLCPP_WARN(node_->get_logger(), "Real robot setting loaded..");
 
     // Image and Point Cloud subscribers
     image_sub_ = node_->create_subscription<sensor_msgs::msg::Image>(
