@@ -55,6 +55,7 @@ public:
   MoveIt_Task(const std::shared_ptr<rclcpp::Node> &node, moveit::planning_interface::MoveGroupInterface &move_group_arm, moveit::planning_interface::MoveGroupInterface &move_group_gripper,moveit::planning_interface::PlanningSceneInterface &planning_scene) : node_(node), move_group_arm_(move_group_arm), move_group_gripper_(move_group_gripper), planning_scene_(planning_scene)
   {
 
+        node_->declare_parameter<bool>("sim", true);
 
 
         // Initialize TF broadcaster
@@ -99,15 +100,28 @@ public:
     //move_abs_joints(joint_goal_degrees_pose1);
     //rclcpp::sleep_for(std::chrono::milliseconds(2000));
 
+    node_->get_parameter("sim", sim);
 
-
+    if(sim)
+    {
     // Image and Point Cloud subscribers
     image_sub_ = node_->create_subscription<sensor_msgs::msg::Image>(
             "/camera_head/color/image_raw", 10, std::bind(&MoveIt_Task::image_callback, this, std::placeholders::_1));
 
     pointcloud_sub_ = node_->create_subscription<sensor_msgs::msg::PointCloud2>(
             "/camera_head/depth/color/points", 10, std::bind(&MoveIt_Task::pointcloud_callback, this, std::placeholders::_1));
+    }
+    else{
 
+    // Image and Point Cloud subscribers
+    image_sub_ = node_->create_subscription<sensor_msgs::msg::Image>(
+            "/camera/camera/color/image_raw", 10, std::bind(&MoveIt_Task::image_callback, this, std::placeholders::_1));
+
+    pointcloud_sub_ = node_->create_subscription<sensor_msgs::msg::PointCloud2>(
+            "/camera/camera/depth/color/points", 10, std::bind(&MoveIt_Task::pointcloud_callback, this, std::placeholders::_1));
+
+
+    }
     // Image publisher for the contour image
     contour_image_pub_ = node_->create_publisher<sensor_msgs::msg::Image>("/contour_image", 10);
 
@@ -173,7 +187,15 @@ public:
         geometry_msgs::msg::TransformStamped transformStamped;
 
         transformStamped.header.stamp = node_->get_clock()->now();
-        transformStamped.header.frame_id = "camera_head_depth_frame";   // Parent frame
+        if(sim)
+        {
+          transformStamped.header.frame_id = "camera_head_depth_frame";   // Parent frame
+        }
+        else
+        {
+          transformStamped.header.frame_id = "camera_depth_frame";   // Parent frame
+
+        }
         transformStamped.child_frame_id = "detected_object"; // Child frame
 
         transformStamped.transform.translation.x = x;
@@ -889,6 +911,9 @@ private:
   std::shared_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster_; // TF broadcaster
   std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
   std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
+
+  //Run on gazebo or real robot
+  bool sim;
 
 
 };
