@@ -129,8 +129,8 @@ public:
     image_sub_ = node_->create_subscription<sensor_msgs::msg::Image>(
             "/camera/camera/color/image_raw", 10, std::bind(&MoveIt_Task::image_callback, this, std::placeholders::_1));
 
-    pointcloud_sub_ = node_->create_subscription<sensor_msgs::msg::PointCloud2>(
-            "/camera/camera/depth/color/points", 10, std::bind(&MoveIt_Task::pointcloud_callback, this, std::placeholders::_1));
+    //pointcloud_sub_ = node_->create_subscription<sensor_msgs::msg::PointCloud2>(
+    //        "/camera/camera/depth/color/points", 10, std::bind(&MoveIt_Task::pointcloud_callback, this, std::placeholders::_1));
 
 
     }
