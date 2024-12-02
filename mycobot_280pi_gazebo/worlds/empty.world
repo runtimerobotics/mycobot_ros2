@@ -38,12 +38,21 @@
       </uri>
     </include>
 
-
+<!--
     <include>
       <uri>model://coke_can</uri>
       <pose>0.3 0.0 0.15 0 0 2.3</pose>
       <scale>0.1 0.1 0.1</scale>
     </include>
+-->
+
+    <!-- Include the cylinder model -->
+    <include>
+      <uri>model://hello_mtc_with_perception_cylinder</uri>
+      <name>hello_mtc_with_perception_cylinder</name>
+      <pose>0.3 0.0 0.15 0 0 2.3</pose>
+      <scale>1 1 1</scale>
+    </include>  
 
 
     <!-- Include a model of the Ground Plane from an external URI -->
