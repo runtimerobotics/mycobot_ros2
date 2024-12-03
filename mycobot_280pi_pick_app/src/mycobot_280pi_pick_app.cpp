@@ -52,7 +52,15 @@ class MoveIt_Task
 {
 public:
   // Constructor
-  MoveIt_Task(const std::shared_ptr<rclcpp::Node> &node, moveit::planning_interface::MoveGroupInterface &move_group_arm, moveit::planning_interface::MoveGroupInterface &move_group_gripper,moveit::planning_interface::PlanningSceneInterface &planning_scene) : node_(node), move_group_arm_(move_group_arm), move_group_gripper_(move_group_gripper), planning_scene_(planning_scene)
+  MoveIt_Task(const std::shared_ptr<rclcpp::Node> &node, 
+              moveit::planning_interface::MoveGroupInterface &move_group_arm, 
+              moveit::planning_interface::MoveGroupInterface &move_group_gripper,
+              moveit::planning_interface::PlanningSceneInterface &planning_scene)
+              : node_(node), move_group_arm_(move_group_arm), 
+              move_group_gripper_(move_group_gripper), 
+              planning_scene_(planning_scene),
+              transform_stamped_()  // Initialize with default transform
+
   {
 
         node_->declare_parameter<bool>("sim", true);
@@ -144,6 +152,48 @@ public:
   }
 
 
+    geometry_msgs::msg::TransformStamped get_transform(
+        const std::string &target_frame, 
+        const std::string &source_frame)
+    {
+        geometry_msgs::msg::TransformStamped transform_stamped;
+        try
+        {
+            // Lookup transform from source_frame to target_frame
+            transform_stamped = tf_buffer_->lookupTransform(
+                target_frame, source_frame, tf2::TimePointZero);
+        }
+        catch (const tf2::TransformException &ex)
+        {
+            RCLCPP_ERROR(node_->get_logger(), "Failed to get transform: %s", ex.what());
+        }
+        return transform_stamped;
+    }
+
+
+    void update_gripper_pose()
+    {
+        try
+        {
+            transform_stamped_ = get_transform("g_base", "gripper_base");
+            RCLCPP_INFO(node_->get_logger(),
+                        "Translation of gripper: x=%.3f, y=%.3f, z=%.3f, x=%.3f, y=%.3f, z=%.3f, w=%.3f",
+                        transform_stamped_.transform.translation.x,
+                        transform_stamped_.transform.translation.y,
+                        transform_stamped_.transform.translation.z,
+                        transform_stamped_.transform.rotation.x,
+                        transform_stamped_.transform.rotation.y,
+                        transform_stamped_.transform.rotation.z,
+                        transform_stamped_.transform.rotation.w);
+        }
+        catch (const tf2::TransformException &ex)
+        {
+            RCLCPP_ERROR(node_->get_logger(), "Failed to get transform: %s", ex.what());
+        }
+    }
+
+
+
     // Callback for image topic
     void image_callback(const sensor_msgs::msg::Image::SharedPtr msg) {
 
@@ -231,9 +281,12 @@ public:
 
         tf_broadcaster_->sendTransform(transformStamped);
 
-        RCLCPP_INFO(node_->get_logger(), "Published TF: [%f, %f, %f]", x, y, z);
+        RCLCPP_INFO(node_->get_logger(), "Published TF of Detect Object: [%f, %f, %f]", x, y, z);
 
         follow_tf_frame("detected_object");
+
+        //It will update the current gripper pose w r t to the base
+        update_gripper_pose();
     }
 
 
@@ -258,7 +311,7 @@ public:
 
         tf_broadcaster_->sendTransform(transformStamped);
 
-        RCLCPP_INFO(node_->get_logger(), "Published TF: [%f, %f, %f]", x, y, z);
+        RCLCPP_INFO(node_->get_logger(), "Published TF to the Goal Pose: [%f, %f, %f]", x, y, z);
 
     }
 
@@ -352,11 +405,11 @@ public:
             //target_pose.pose.orientation.z = 0;
             //target_pose.pose.orientation.w = 1;
 
-
+            /*
             RCLCPP_INFO(node_->get_logger(), "Translation target: x=%f, y=%f, z=%f", target_pose.pose.position.x, 
                                                                                     target_pose.pose.position.y, 
                                                                                     target_pose.pose.position.z);
-
+            */
             // Set the target pose for the MoveIt interface
 
             /*
@@ -972,6 +1025,10 @@ private:
   std::shared_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster_; // TF broadcaster
   std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
   std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
+
+
+  rclcpp::TimerBase::SharedPtr timer_;
+  geometry_msgs::msg::TransformStamped transform_stamped_;  // Stores the transform
 
   //Run on gazebo or real robot
   bool sim;
