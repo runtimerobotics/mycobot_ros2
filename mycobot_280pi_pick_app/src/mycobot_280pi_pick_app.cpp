@@ -1045,67 +1045,53 @@ int main(int argc, char* argv[])
 
   auto move_obj = MoveIt_Task(node, move_group_arm, move_group_gripper, planning_scene_interface); // Instantiate the MoveIt_Task 
 
+  bool sim;
+  node->get_parameter("sim", sim);
 
-  while (rclcpp::ok()) {
+  if(not sim)
+  {
+  
 
-    if(move_obj.is_frame_available("goal_pose","g_base"))
-    {
+    while (rclcpp::ok()) {
 
-      move_obj.move_home("home");
-      rclcpp::sleep_for(std::chrono::milliseconds(2000));
+      if(move_obj.is_frame_available("goal_pose","g_base"))
+      {
 
-        RCLCPP_ERROR(node->get_logger(), "Goal pose is available");
+        move_obj.move_home("home");
+        rclcpp::sleep_for(std::chrono::milliseconds(2000));
 
-        geometry_msgs::msg::TransformStamped grip_position = move_obj.getGoalPose();
+          RCLCPP_ERROR(node->get_logger(), "Goal pose is available");
 
-        double x = grip_position.transform.translation.x-0.05;
-        double y = grip_position.transform.translation.y;
-        double z = grip_position.transform.translation.z+0.1;
+          geometry_msgs::msg::TransformStamped grip_position = move_obj.getGoalPose();
 
-        //double x =0.415;
-        //double y = -0.065;
-        //double z = 0.364;
+          double x = grip_position.transform.translation.x-0.05;
+          double y = grip_position.transform.translation.y;
+          double z = grip_position.transform.translation.z+0.1;
+
+          //double x =0.415;
+          //double y = -0.065;
+          //double z = 0.364;
 
 
-        std::vector<double> position = {x,y,z};
+          std::vector<double> position = {x,y,z};
 
-        RCLCPP_ERROR(node->get_logger(), "Moving to object position");
+          RCLCPP_ERROR(node->get_logger(), "Moving to object position");
 
-        move_obj.move_abs(position,"W");
+          move_obj.move_abs(position,"W");
 
-        RCLCPP_ERROR(node->get_logger(), "Moved to object position");
+          RCLCPP_ERROR(node->get_logger(), "Moved to object position");
 
-        RCLCPP_ERROR(node->get_logger(), "Translation X :%f , Y: %f,  Z: %f", x,y,z);
-        rclcpp::sleep_for(std::chrono::milliseconds(10000));
+          RCLCPP_ERROR(node->get_logger(), "Translation X :%f , Y: %f,  Z: %f", x,y,z);
+          rclcpp::sleep_for(std::chrono::milliseconds(10000));
+
+      }
 
     }
 
   }
-/*
 
-  while (rclcpp::ok()) {
-
-    if(move_obj.is_frame_available("goal_pose","g_base"))
-
-    {
-
-      RCLCPP_ERROR(node->get_logger(), "Goal pose is available");
-
-      geometry_msgs::msg::TransformStamped grip_position = move_obj.getCurrentPose();
-
-      double x = grip_position.transform.translation.x;
-      double y = grip_position.transform.translation.y;
-      double z = grip_position.transform.translation.z+0.1;
-
-      std::vector<double> position = {x,y,z};
-     
-      move_obj.move_abs(position,"S");
-
-      RCLCPP_ERROR(node->get_logger(), "Translation X :%f , Y: %f,  Z: %f", x,y,z);
-
-
-    }
-
+  else
+  {
 
   while (rclcpp::ok()) {
 
@@ -1114,14 +1100,16 @@ int main(int argc, char* argv[])
     move_obj.move_home("home");
     rclcpp::sleep_for(std::chrono::milliseconds(2000));
     move_obj.move_gripper("open");
-    std::vector<double> joint_goal_degrees_pose1 = {-0.139626, -0.837758, -0.942478, 0.209439, -0.017453, -0.139626};
+    std::vector<double> joint_goal_degrees_pose1 = {-0.4712, -2.1642, -0.1047, 2.2689, 0.4712, -0.7854};
     move_obj.move_abs_joints(joint_goal_degrees_pose1);
     rclcpp::sleep_for(std::chrono::milliseconds(2000));
     move_obj.move_gripper("open");
     rclcpp::sleep_for(std::chrono::milliseconds(2000));
     move_obj.move_gripper("close");
     rclcpp::sleep_for(std::chrono::milliseconds(2000));
-    std::vector<double> joint_goal_degrees_pose2 = {0.523599,-0.715584,-1.186823,0.314159,0.017453,0.523599};
+    move_obj.move_home("home");
+    rclcpp::sleep_for(std::chrono::milliseconds(2000));
+    std::vector<double> joint_goal_degrees_pose2 = {0.5585, -1.4486, -0.9425, 2.3911, -0.5585,-0.7854};
     move_obj.move_abs_joints(joint_goal_degrees_pose2);
     rclcpp::sleep_for(std::chrono::milliseconds(2000));
     move_obj.move_gripper("open");
@@ -1129,10 +1117,10 @@ int main(int argc, char* argv[])
 
 
   }
-*/
+
+  }
+
   rclcpp::shutdown();
-
-
   return 0;
 
 }
