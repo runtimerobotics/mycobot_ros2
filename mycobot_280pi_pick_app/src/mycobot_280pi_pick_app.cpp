@@ -59,8 +59,8 @@ public:
               : node_(node), move_group_arm_(move_group_arm), 
               move_group_gripper_(move_group_gripper), 
               planning_scene_(planning_scene),
-              transform_stamped_()  // Initialize with default transform
-
+              transform_stamped_(),  // Initialize with default transform
+              transform_stamped_goal_()
   {
 
         node_->declare_parameter<bool>("sim", true);
@@ -93,17 +93,16 @@ public:
     // move_group_.setPlannerId("APSConfigDefault");
 
     move_group_arm_.setPlanningPipelineId("ompl");     // Set planning pipeline
-    move_group_arm_.setGoalPositionTolerance(1);    // 1 mm tolerance
-    move_group_arm_.setGoalOrientationTolerance(1); // Tolerance for orientation (0.01 radians = 0.57 degress)
+    move_group_arm_.setGoalPositionTolerance(0.2);    // 1 mm tolerance
+    move_group_arm_.setGoalOrientationTolerance(0.2); // Tolerance for orientation (0.01 radians = 0.57 degress)
 
     // Set planning time and planning attempts
     move_group_arm_.setPlanningTime(5.0);     // 10 seconds max planning time
     move_group_arm_.setNumPlanningAttempts(10); // Try planning 5 times
 
-    //Homing first
-    move_home("home");
+
     //Goto
-    rclcpp::sleep_for(std::chrono::milliseconds(5000));
+    rclcpp::sleep_for(std::chrono::milliseconds(2000));
     //move_gripper("open");
     //std::vector<double> joint_goal_degrees_pose1 = {-0.2443,-1.0821,0.4189,-0.9250,0.1222,-0.2793};
     //move_abs_joints(joint_goal_degrees_pose1);
@@ -175,7 +174,7 @@ public:
     {
         try
         {
-            transform_stamped_ = get_transform("g_base", "gripper_base");
+            transform_stamped_ = get_transform("g_base","joint6_flange");
             RCLCPP_INFO(node_->get_logger(),
                         "Translation of gripper: x=%.3f, y=%.3f, z=%.3f, x=%.3f, y=%.3f, z=%.3f, w=%.3f",
                         transform_stamped_.transform.translation.x,
@@ -185,12 +184,37 @@ public:
                         transform_stamped_.transform.rotation.y,
                         transform_stamped_.transform.rotation.z,
                         transform_stamped_.transform.rotation.w);
+
+            transform_stamped_goal_ = get_transform("g_base","goal_pose");
+            RCLCPP_INFO(node_->get_logger(),
+                        "Translation of goal: x=%.3f, y=%.3f, z=%.3f, x=%.3f, y=%.3f, z=%.3f, w=%.3f",
+                        transform_stamped_goal_.transform.translation.x,
+                        transform_stamped_goal_.transform.translation.y,
+                        transform_stamped_goal_.transform.translation.z,
+                        transform_stamped_goal_.transform.rotation.x,
+                        transform_stamped_goal_.transform.rotation.y,
+                        transform_stamped_goal_.transform.rotation.z,
+                        transform_stamped_goal_.transform.rotation.w);
+
+
         }
         catch (const tf2::TransformException &ex)
         {
             RCLCPP_ERROR(node_->get_logger(), "Failed to get transform: %s", ex.what());
         }
     }
+
+  //Current gripper pose
+  geometry_msgs::msg::TransformStamped getCurrentPose()
+  {
+      return transform_stamped_;
+  }
+
+  //Current goal pose
+  geometry_msgs::msg::TransformStamped getGoalPose()
+  {
+      return transform_stamped_goal_;
+  }
 
 
 
@@ -704,6 +728,8 @@ bool move_joint(int index, double joint_value)
 
 
 
+
+
   // Function to move the robot's end-effector in Cartesian space relative to its current position
   bool move_abs_cartesian(double x, double y, double z)
   {
@@ -824,10 +850,10 @@ bool move_joint(int index, double joint_value)
     }
     else if (target_orientation == "W")
     {
-      target_pose.orientation.x = 0.0;
-      target_pose.orientation.y = 0.0;
-      target_pose.orientation.z = -1.0 / std::sqrt(2);
-      target_pose.orientation.w = 1.0 / std::sqrt(2);
+      target_pose.orientation.x = -0.5;
+      target_pose.orientation.y = 0.5;
+      target_pose.orientation.z = -0.5;
+      target_pose.orientation.w = 0.5;
     }
     else
     {
@@ -862,7 +888,7 @@ bool move_joint(int index, double joint_value)
         //current_plan = my_plan;
         //save_trajectory(file_name);
 
-        move_group_arm_.clearPathConstraints(); // Clear the path constraints after the motion is completed
+        //move_group_arm_.clearPathConstraints(); // Clear the path constraints after the motion is completed
         return true;                     // Return true if the motion was successfully planned and executed
 
       }
@@ -995,6 +1021,7 @@ private:
 
   rclcpp::TimerBase::SharedPtr timer_;
   geometry_msgs::msg::TransformStamped transform_stamped_;  // Stores the transform
+  geometry_msgs::msg::TransformStamped transform_stamped_goal_;  // Stores the transform
 
   //Run on gazebo or real robot
   bool sim;
@@ -1018,12 +1045,72 @@ int main(int argc, char* argv[])
 
   auto move_obj = MoveIt_Task(node, move_group_arm, move_group_gripper, planning_scene_interface); // Instantiate the MoveIt_Task 
 
+
+  while (rclcpp::ok()) {
+
+    if(move_obj.is_frame_available("goal_pose","g_base"))
+    {
+
+      move_obj.move_home("home");
+      rclcpp::sleep_for(std::chrono::milliseconds(2000));
+
+        RCLCPP_ERROR(node->get_logger(), "Goal pose is available");
+
+        geometry_msgs::msg::TransformStamped grip_position = move_obj.getGoalPose();
+
+        double x = grip_position.transform.translation.x-0.05;
+        double y = grip_position.transform.translation.y;
+        double z = grip_position.transform.translation.z+0.1;
+
+        //double x =0.415;
+        //double y = -0.065;
+        //double z = 0.364;
+
+
+        std::vector<double> position = {x,y,z};
+
+        RCLCPP_ERROR(node->get_logger(), "Moving to object position");
+
+        move_obj.move_abs(position,"W");
+
+        RCLCPP_ERROR(node->get_logger(), "Moved to object position");
+
+        RCLCPP_ERROR(node->get_logger(), "Translation X :%f , Y: %f,  Z: %f", x,y,z);
+        rclcpp::sleep_for(std::chrono::milliseconds(10000));
+
+    }
+
+  }
+/*
+
+  while (rclcpp::ok()) {
+
+    if(move_obj.is_frame_available("goal_pose","g_base"))
+
+    {
+
+      RCLCPP_ERROR(node->get_logger(), "Goal pose is available");
+
+      geometry_msgs::msg::TransformStamped grip_position = move_obj.getCurrentPose();
+
+      double x = grip_position.transform.translation.x;
+      double y = grip_position.transform.translation.y;
+      double z = grip_position.transform.translation.z+0.1;
+
+      std::vector<double> position = {x,y,z};
+     
+      move_obj.move_abs(position,"S");
+
+      RCLCPP_ERROR(node->get_logger(), "Translation X :%f , Y: %f,  Z: %f", x,y,z);
+
+
+    }
+
+
   while (rclcpp::ok()) {
 
 
-    rclcpp::sleep_for(std::chrono::milliseconds(2000));
 
-/*
     move_obj.move_home("home");
     rclcpp::sleep_for(std::chrono::milliseconds(2000));
     move_obj.move_gripper("open");
@@ -1039,10 +1126,10 @@ int main(int argc, char* argv[])
     rclcpp::sleep_for(std::chrono::milliseconds(2000));
     move_obj.move_gripper("open");
     rclcpp::sleep_for(std::chrono::milliseconds(2000));
-*/
+
 
   }
-
+*/
   rclcpp::shutdown();
 
 
