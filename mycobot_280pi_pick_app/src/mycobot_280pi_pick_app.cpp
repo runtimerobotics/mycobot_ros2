@@ -678,6 +678,22 @@ bool move_joint(int index, double joint_value)
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+    bool is_frame_available(const std::string &target_frame, const std::string &source_frame)
+    {
+        try
+        {
+            // Check for transform availability with a timeout of 100ms
+            tf_buffer_->canTransform(target_frame, source_frame, tf2::TimePointZero, std::chrono::milliseconds(100));
+            return true;
+        }
+        catch (const tf2::TransformException &ex)
+        {
+            RCLCPP_WARN(node_->get_logger(), "Frame not available: %s", ex.what());
+            return false;
+        }
+    }
+
+
 
   // Function to move the robot's end-effector in Cartesian space relative to its current position
   bool move_abs_cartesian(double x, double y, double z)
@@ -820,34 +836,6 @@ bool move_joint(int index, double joint_value)
 
     /////////////////////////////////////////////////////////////////////////////////////
 
-    // Create an orientation constraint to ensure the gripper maintains the correct orientation
-    /*
-    moveit_msgs::msg::OrientationConstraint ocm;
-
-    ocm.link_name = "gripper_base";       // Specify the link to be constrained (e.g., the gripper link)
-    ocm.header.frame_id = "g_base"; // Set the frame of reference for the orientation constraint
-
-    ocm.orientation = target_pose.orientation; // Set the desired orientation for the link (copy the orientation from the target pose)
-
-    ocm.absolute_x_axis_tolerance = 0.1; // Set tolerances for the allowed deviations from the desired orientation (in radians)
-    ocm.absolute_y_axis_tolerance = 0.1;
-    ocm.absolute_z_axis_tolerance = M_PI*0.51; 
-    ocm.weight = 1.0; // Assign a weight to the constraint (0.5 gives it medium importance)
-
-    // Create and add the path constraints
-    moveit_msgs::msg::Constraints path_constraints;          // Create a Constraints message to store the path constraints
-    path_constraints.name = "horizontal_constraint";         // Name the constraint for easier identification
-    path_constraints.orientation_constraints.push_back(ocm); // Add the orientation constraint to the path constraints
-    move_group_arm_.setPathConstraints(path_constraints);        // Apply the constraints to the move group to ensure the robot follows these constraints during motion planning
-    */
-    ///////////////////////////////////////////////////////////////////////////////////////////////
-
-    // add_constraints();
-
-    // Plan and execute the motion to the target pose
-
-    //if(mode == "save")
-    //{
 
       moveit::planning_interface::MoveGroupInterface::Plan my_plan;
       // bool success = (move_group_.plan(my_plan) == moveit::core::MoveItErrorCode::SUCCESS);
