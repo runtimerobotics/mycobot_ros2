@@ -268,7 +268,7 @@ public:
     void pointcloud_callback(const sensor_msgs::msg::PointCloud2::SharedPtr msg) {
 
 
-        RCLCPP_WARN(node_->get_logger(), "PCL callabck 1..");
+        RCLCPP_WARN(node_->get_logger(), "Point Cloud Callback");
 
         if (centroid_.has_value()) {
             int point_index = (centroid_->y * msg->width + centroid_->x);
@@ -276,19 +276,34 @@ public:
             // Access the data in the point cloud
             float* data_ptr = reinterpret_cast<float*>(&msg->data[point_index * msg->point_step]);
 
-        RCLCPP_WARN(node_->get_logger(), "PCL callabck 2..");
+
+            if (data_ptr != nullptr) {
+              
+            RCLCPP_WARN(node_->get_logger(), " Data pointer is valid");
 
             try{
+
             geometry_msgs::msg::Point pt;
-           // pt.x = data_ptr[0];
-          //  pt.y = data_ptr[1];
-          //  pt.z = data_ptr[2];
 
-            RCLCPP_INFO(node_->get_logger(), "3D Point: x=%f, y=%f, z=%f", pt.x, pt.y, pt.z);
+            if (std::isnan(data_ptr[0]) || std::isinf(data_ptr[0]) || std::isnan(data_ptr[1]) || std::isinf(data_ptr[1]) || std::isnan(data_ptr[2]) || std::isinf(data_ptr[2])) {
 
-            // Publish the TF
-            //publish_tf( pt.x, pt.y, pt.z);
-            
+                RCLCPP_WARN(node_->get_logger(), "Unable to fnd points in point cloud");
+
+            }
+            else
+            {
+              pt.x = data_ptr[0];
+              pt.y = data_ptr[1];
+              pt.z = data_ptr[2];
+
+              RCLCPP_INFO(node_->get_logger(), "3D Point: x=%f, y=%f, z=%f", pt.x, pt.y, pt.z);
+
+
+              // Publish the TF
+              publish_tf( pt.x, pt.y, pt.z);
+            }
+
+
             }
 
             catch(int e)
@@ -298,6 +313,12 @@ public:
 
            RCLCPP_WARN(node_->get_logger(), "PCL callabck 3..");
 
+          }
+          else
+          {
+              RCLCPP_ERROR(node_->get_logger(), "Null pointer detected for point data.");
+
+          }
 
         }
     }
@@ -338,10 +359,12 @@ public:
 
             // Set the target pose for the MoveIt interface
 
+            /*
             move_abs_cartesian(target_pose.pose.position.x,
                                     target_pose.pose.position.y,
                                     target_pose.pose.position.z);
-            
+            */
+
             /*                        
             move_group_arm_.setPoseTarget(target_pose);
 
@@ -776,6 +799,7 @@ bool move_joint(int index, double joint_value)
     /////////////////////////////////////////////////////////////////////////////////////
 
     // Create an orientation constraint to ensure the gripper maintains the correct orientation
+    /*
     moveit_msgs::msg::OrientationConstraint ocm;
 
     ocm.link_name = "gripper_base";       // Specify the link to be constrained (e.g., the gripper link)
@@ -793,7 +817,7 @@ bool move_joint(int index, double joint_value)
     path_constraints.name = "horizontal_constraint";         // Name the constraint for easier identification
     path_constraints.orientation_constraints.push_back(ocm); // Add the orientation constraint to the path constraints
     move_group_arm_.setPathConstraints(path_constraints);        // Apply the constraints to the move group to ensure the robot follows these constraints during motion planning
-
+    */
     ///////////////////////////////////////////////////////////////////////////////////////////////
 
     // add_constraints();

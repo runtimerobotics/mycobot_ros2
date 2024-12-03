@@ -73,7 +73,7 @@ RUN apt-get update && apt-get install -y \
     ros-$ROS_DISTRO-gazebo-ros-pkgs \
     ros-${ROS_DISTRO}-gz-ros2-control \
     ros-${ROS_DISTRO}-gz-ros2-control-demos \
-    ros-${ROS_DISTRO}-librealsense2* \
+    ros-${ROS_DISTRO}-librealsense2 \
     ros-${ROS_DISTRO}-realsense2-* \
     ros-${ROS_DISTRO}-pcl-ros \
     ros-${ROS_DISTRO}-rqt-tf-tree \
