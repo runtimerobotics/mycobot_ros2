@@ -254,7 +254,7 @@ public:
 
 
     // Function to publish TF
-    void publish_tf(double x, double y, double z) {
+    void publish_tf_object(double x, double y, double z) {
         geometry_msgs::msg::TransformStamped transformStamped;
 
         transformStamped.header.stamp = node_->get_clock()->now();
@@ -283,7 +283,7 @@ public:
 
         RCLCPP_INFO(node_->get_logger(), "Published TF of Detect Object: [%f, %f, %f]", x, y, z);
 
-        follow_tf_frame("detected_object");
+        publish_goal_tf_frame("detected_object");
 
         //It will update the current gripper pose w r t to the base
         update_gripper_pose();
@@ -353,7 +353,7 @@ public:
 
 
               // Publish the TF
-              publish_tf( pt.x, pt.y, pt.z);
+              publish_tf_object( pt.x, pt.y, pt.z);
             }
 
 
@@ -378,7 +378,7 @@ public:
 
 
 
-    void follow_tf_frame(const std::string &target_frame) {
+    void publish_goal_tf_frame(const std::string &target_frame) {
         try {
             // Lookup the transform from the base frame to the target frame
             geometry_msgs::msg::TransformStamped transform_stamped =
@@ -388,7 +388,7 @@ public:
 
             // Convert to PoseStamped for MoveIt
             geometry_msgs::msg::PoseStamped target_pose;
-            target_pose.header.frame_id = "gripper_base";
+            target_pose.header.frame_id = "g_base";
             target_pose.header.stamp = node_->get_clock()->now();
 
             target_pose.pose.position.x = transform_stamped.transform.translation.x;
@@ -399,37 +399,6 @@ public:
             //Publish TF of goal
             publish_tf_goal(target_pose.pose.position.x, target_pose.pose.position.y, target_pose.pose.position.z);
 
-
-            //target_pose.pose.orientation.x = 0;
-            //target_pose.pose.orientation.y = 0;
-            //target_pose.pose.orientation.z = 0;
-            //target_pose.pose.orientation.w = 1;
-
-            /*
-            RCLCPP_INFO(node_->get_logger(), "Translation target: x=%f, y=%f, z=%f", target_pose.pose.position.x, 
-                                                                                    target_pose.pose.position.y, 
-                                                                                    target_pose.pose.position.z);
-            */
-            // Set the target pose for the MoveIt interface
-
-            /*
-            move_abs_cartesian(target_pose.pose.position.x,
-                                    target_pose.pose.position.y,
-                                    target_pose.pose.position.z);
-            */
-
-            /*                        
-            move_group_arm_.setPoseTarget(target_pose);
-
-            // Plan and execute
-            moveit::planning_interface::MoveGroupInterface::Plan plan;
-            if (move_group_arm_.plan(plan) == moveit::core::MoveItErrorCode::SUCCESS) {
-                move_group_arm_.execute(plan);
-                RCLCPP_INFO(node_->get_logger(), "Motion executed successfully.");
-            } else {
-                RCLCPP_WARN(node_->get_logger(), "Failed to plan motion.");
-            }
-*/
         } catch (tf2::TransformException &ex) {
             RCLCPP_ERROR(node_->get_logger(), "Transform error: %s", ex.what());
         }
