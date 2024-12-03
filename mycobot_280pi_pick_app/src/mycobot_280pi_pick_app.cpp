@@ -269,10 +269,19 @@ public:
         }
         transformStamped.child_frame_id = "detected_object"; // Child frame
 
-        transformStamped.transform.translation.x = x;
-        transformStamped.transform.translation.y = y;
-        transformStamped.transform.translation.z = z;
+        if(sim)
+        {
+          transformStamped.transform.translation.x = x;
+          transformStamped.transform.translation.y = y;
+          transformStamped.transform.translation.z = z;
+        }
+        else
+        {
+          transformStamped.transform.translation.x = z;
+          transformStamped.transform.translation.y = y;
+          transformStamped.transform.translation.z = x;
 
+        }
 
         transformStamped.transform.rotation.x = 0.0;
         transformStamped.transform.rotation.y = 0.0;
