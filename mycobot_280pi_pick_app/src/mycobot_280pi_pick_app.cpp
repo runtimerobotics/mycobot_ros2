@@ -24,6 +24,10 @@
 #include <moveit/planning_scene_monitor/planning_scene_monitor.h>
 #include <moveit/robot_state/robot_state.h>
 
+#include <geometric_shapes/shape_operations.h>
+#include <shape_msgs/msg/solid_primitive.hpp>
+#include <moveit_msgs/msg/collision_object.hpp>
+
 
 #include <sensor_msgs/msg/image.hpp>
 #include <sensor_msgs/msg/point_cloud2.hpp>
@@ -64,6 +68,8 @@ public:
   {
 
         node_->declare_parameter<bool>("sim", true);
+        node_->declare_parameter<bool>("manual", true);
+
         centroid_ = {640/2, 480/2};
 
 
@@ -274,6 +280,40 @@ public:
         //cv::imshow("Red Object Detection", img);
         //cv::waitKey(1);
     }
+
+
+
+void addObstaclePlane(const std::string& plane_id, 
+                      const std::string& frame_id,
+                      const geometry_msgs::msg::Pose& plane_pose,
+                      double plane_size_x, 
+                      double plane_size_y, 
+                      double plane_thickness = 0.01)
+{
+    moveit::planning_interface::PlanningSceneInterface planning_scene_interface;
+
+    // Define a collision object.
+    moveit_msgs::msg::CollisionObject collision_object;
+    collision_object.id = plane_id;
+    collision_object.header.frame_id = frame_id;
+
+    // Define the plane as a box with a very small thickness.
+    shape_msgs::msg::SolidPrimitive primitive;
+    primitive.type = shape_msgs::msg::SolidPrimitive::BOX;
+    primitive.dimensions.resize(3);
+    primitive.dimensions[0] = plane_size_x;
+    primitive.dimensions[1] = plane_size_y;
+    primitive.dimensions[2] = plane_thickness;
+
+    // Assign the pose.
+    collision_object.primitives.push_back(primitive);
+    collision_object.primitive_poses.push_back(plane_pose);
+    collision_object.operation = collision_object.ADD;
+
+    // Add the object to the planning scene.
+    planning_scene_interface.applyCollisionObject(collision_object);
+}
+
 
 
 
@@ -1045,10 +1085,24 @@ int main(int argc, char* argv[])
 
   auto move_obj = MoveIt_Task(node, move_group_arm, move_group_gripper, planning_scene_interface); // Instantiate the MoveIt_Task 
 
-  bool sim;
-  node->get_parameter("sim", sim);
+  // Define the plane's pose.
+  geometry_msgs::msg::Pose plane_pose;
+  plane_pose.position.x = 0.0;
+  plane_pose.position.y = 0.0;
+  plane_pose.position.z = -0.04;
+  plane_pose.orientation.w = 1.0;  // Identity quaternion (no rotation)
 
-  if(not sim)
+    // Add the plane obstacle.
+  move_obj.addObstaclePlane("plane_obstacle", "world", plane_pose, 2.0, 2.0);
+
+
+  bool sim;
+  bool mode;
+
+  node->get_parameter("sim", sim);
+  node->get_parameter("manual", mode);
+
+  if(not mode)
   {
   
 
