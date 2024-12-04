@@ -1143,7 +1143,7 @@ int main(int argc, char* argv[])
 
         move_obj.move_gripper("open");
         rclcpp::sleep_for(std::chrono::milliseconds(2000));
-        move_obj.move_gripper("close");
+        move_obj.move_gripper("half_close");
         rclcpp::sleep_for(std::chrono::milliseconds(2000));
         move_obj.move_home("home");
         rclcpp::sleep_for(std::chrono::milliseconds(2000));
@@ -1177,7 +1177,7 @@ int main(int argc, char* argv[])
     rclcpp::sleep_for(std::chrono::milliseconds(5000));
     move_obj.move_gripper("open");
     rclcpp::sleep_for(std::chrono::milliseconds(5000));
-    move_obj.move_gripper("close");
+    move_obj.move_gripper("half_close");
     rclcpp::sleep_for(std::chrono::milliseconds(5000));
     move_obj.move_home("home");
     rclcpp::sleep_for(std::chrono::milliseconds(5000));
