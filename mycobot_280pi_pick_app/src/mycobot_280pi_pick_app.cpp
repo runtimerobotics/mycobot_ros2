@@ -600,7 +600,7 @@ bool move_joint(int index, double joint_value)
     {
       RCLCPP_INFO(node_->get_logger(), "Planning to named target '%s' successful!", named_target.c_str());
 
-      move_group_arm_.execute(my_plan); // Execute the planned motion to the home position
+      move_group_gripper_.execute(my_plan); // Execute the planned motion to the home position
       //current_plan = my_plan;
 
       RCLCPP_INFO(node_->get_logger(), "Motion to '%s' executed.", named_target.c_str());
@@ -1169,22 +1169,23 @@ int main(int argc, char* argv[])
 
 
     move_obj.move_home("home");
-    rclcpp::sleep_for(std::chrono::milliseconds(2000));
+    rclcpp::sleep_for(std::chrono::milliseconds(5000));
     move_obj.move_gripper("open");
+    rclcpp::sleep_for(std::chrono::milliseconds(5000));
     std::vector<double> joint_goal_degrees_pose1 = {-0.4712, -2.1642, -0.1047, 2.2689, 0.4712, -0.7854};
     move_obj.move_abs_joints(joint_goal_degrees_pose1);
-    rclcpp::sleep_for(std::chrono::milliseconds(2000));
+    rclcpp::sleep_for(std::chrono::milliseconds(5000));
     move_obj.move_gripper("open");
-    rclcpp::sleep_for(std::chrono::milliseconds(2000));
+    rclcpp::sleep_for(std::chrono::milliseconds(5000));
     move_obj.move_gripper("close");
-    rclcpp::sleep_for(std::chrono::milliseconds(2000));
+    rclcpp::sleep_for(std::chrono::milliseconds(5000));
     move_obj.move_home("home");
-    rclcpp::sleep_for(std::chrono::milliseconds(2000));
+    rclcpp::sleep_for(std::chrono::milliseconds(5000));
     std::vector<double> joint_goal_degrees_pose2 = {0.5585, -1.4486, -0.9425, 2.3911, -0.5585,-0.7854};
     move_obj.move_abs_joints(joint_goal_degrees_pose2);
-    rclcpp::sleep_for(std::chrono::milliseconds(2000));
+    rclcpp::sleep_for(std::chrono::milliseconds(5000));
     move_obj.move_gripper("open");
-    rclcpp::sleep_for(std::chrono::milliseconds(2000));
+    rclcpp::sleep_for(std::chrono::milliseconds(5000));
 
 
   }
