@@ -1136,7 +1136,24 @@ int main(int argc, char* argv[])
           RCLCPP_ERROR(node->get_logger(), "Moved to object position");
 
           RCLCPP_ERROR(node->get_logger(), "Translation X :%f , Y: %f,  Z: %f", x,y,z);
-          rclcpp::sleep_for(std::chrono::milliseconds(10000));
+          rclcpp::sleep_for(std::chrono::milliseconds(2000));
+
+
+        //Adding placing routine
+
+        move_obj.move_gripper("open");
+        rclcpp::sleep_for(std::chrono::milliseconds(2000));
+        move_obj.move_gripper("close");
+        rclcpp::sleep_for(std::chrono::milliseconds(2000));
+        move_obj.move_home("home");
+        rclcpp::sleep_for(std::chrono::milliseconds(2000));
+        std::vector<double> joint_goal_degrees_pose2 = {0.5585, -1.4486, -0.9425, 2.3911, -0.5585,-0.7854};
+        move_obj.move_abs_joints(joint_goal_degrees_pose2);
+        rclcpp::sleep_for(std::chrono::milliseconds(2000));
+        move_obj.move_gripper("open");
+        rclcpp::sleep_for(std::chrono::milliseconds(2000));
+
+
 
       }
 
