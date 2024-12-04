@@ -6,6 +6,7 @@ from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch_ros.actions import Node
 from launch.substitutions import LaunchConfiguration
 from ament_index_python.packages import get_package_share_directory
+from launch.actions import ExecuteProcess
 
 
 def generate_launch_description():
@@ -48,6 +49,25 @@ def generate_launch_description():
         condition=UnlessCondition(sim)  # Runs if sim is not 'true'
     )
 
+    realsense_launch = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            os.path.join(
+                get_package_share_directory('realsense2_camera'),
+                'launch',
+                'rs_launch.py'
+            )
+        ),
+        launch_arguments={
+            'depth_module.depth_profile': '640x480x15',
+            'pointcloud.enable': 'true',
+            'align_depth': 'true',
+            'pointcloud.ordered_pc': 'true'
+        }.items(),
+        condition=UnlessCondition(sim)  # Runs only if sim is false
+    )
+
+
+
     # Launch the MoveIt config demo after 7 seconds
     demo_launch = TimerAction(
         period=15.0,
@@ -88,5 +108,7 @@ def generate_launch_description():
         sim_bringup_launch,
         real_bringup_launch,
         demo_launch,
-        pick_app_node
+        pick_app_node,
+        realsense_launch  # Add this line
+
     ])
