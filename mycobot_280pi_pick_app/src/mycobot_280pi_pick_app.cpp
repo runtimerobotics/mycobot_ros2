@@ -1008,10 +1008,21 @@ bool move_joint(int index, double joint_value)
     }
   }
 
+void convertToRadians(std::vector<double>& joint_goal) {
+    const double DEG_TO_RAD = M_PI / 180.0; // Conversion factor from degrees to radians
+    for (double& angle : joint_goal) {
+        angle *= DEG_TO_RAD;
+    }
+}
+
+
 
 ///////////////////////////////////////////////////////////////////
-  bool move_abs_joints(const std::vector<double>& joint_goal)
+  bool move_abs_joints(std::vector<double> joint_goal)
   {
+
+    convertToRadians(joint_goal);
+
     int current_try = 1;
     while(current_try < max_planning_tries)
     {
@@ -1172,8 +1183,12 @@ int main(int argc, char* argv[])
     rclcpp::sleep_for(std::chrono::milliseconds(5000));
     move_obj.move_gripper("open");
     rclcpp::sleep_for(std::chrono::milliseconds(5000));
-    std::vector<double> joint_goal_degrees_pose1 = {-0.4712, -2.1642, -0.1047, 2.2689, 0.4712, -0.7854};
+    //Picking position
+    std::vector<double> joint_goal_degrees_pose1 = {24,-50,-63,-67,-156,135};
     move_obj.move_abs_joints(joint_goal_degrees_pose1);
+    rclcpp::sleep_for(std::chrono::milliseconds(5000));
+    std::vector<double> joint_goal_degrees_pose2 = {21,-74,-13,-92,-159,135};
+    move_obj.move_abs_joints(joint_goal_degrees_pose2);
     rclcpp::sleep_for(std::chrono::milliseconds(5000));
     move_obj.move_gripper("open");
     rclcpp::sleep_for(std::chrono::milliseconds(5000));
@@ -1181,8 +1196,11 @@ int main(int argc, char* argv[])
     rclcpp::sleep_for(std::chrono::milliseconds(5000));
     move_obj.move_home("home");
     rclcpp::sleep_for(std::chrono::milliseconds(5000));
-    std::vector<double> joint_goal_degrees_pose2 = {0.5585, -1.4486, -0.9425, 2.3911, -0.5585,-0.7854};
-    move_obj.move_abs_joints(joint_goal_degrees_pose2);
+    //Place position
+    std::vector<double> joint_goal_degrees_pose3 = {-150,76,-11,116,30,135};
+    //std::vector<double> joint_goal_degrees_pose3 = {108,77,-8,112,-72,135}; //place 2
+
+    move_obj.move_abs_joints(joint_goal_degrees_pose3);
     rclcpp::sleep_for(std::chrono::milliseconds(5000));
     move_obj.move_gripper("open");
     rclcpp::sleep_for(std::chrono::milliseconds(5000));
