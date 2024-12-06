@@ -228,40 +228,185 @@ public:
     void image_callback(const sensor_msgs::msg::Image::SharedPtr msg) {
 
         cv::Mat img = cv_bridge::toCvCopy(msg, "bgr8")->image;
-        cv::Mat hsv_img, mask1, mask2, combined_mask;
 
+       // RCLCPP_ERROR(node_->get_logger(), "Point 1 ");
+
+
+        cv::Mat hsv_img_red, mask1_red, mask2_red, combined_mask_red;
+        cv::Mat hsv_img_green, mask1_green, mask2_green, combined_mask_green;
+        cv::Mat hsv_img_blue, mask1_blue, mask2_blue, combined_mask_blue;
+
+
+       // RCLCPP_ERROR(node_->get_logger(), "Point 2 ");
 
     //RCLCPP_WARN(node_->get_logger(), "Image callabck 1..");
 
         // Convert image to HSV format
-        cv::cvtColor(img, hsv_img, cv::COLOR_BGR2HSV);
+        cv::cvtColor(img, hsv_img_red, cv::COLOR_BGR2HSV);
+        cv::cvtColor(img, hsv_img_green, cv::COLOR_BGR2HSV);
+        cv::cvtColor(img, hsv_img_blue, cv::COLOR_BGR2HSV);
+
+
+       // RCLCPP_ERROR(node_->get_logger(), "Point 3 ");
 
         // Detect lower and upper ranges of red color
-        cv::inRange(hsv_img, cv::Scalar(0, 120, 70), cv::Scalar(10, 255, 255), mask1);
-        cv::inRange(hsv_img, cv::Scalar(170, 120, 70), cv::Scalar(180, 255, 255), mask2);
+        cv::inRange(hsv_img_red, cv::Scalar(0, 120, 70), cv::Scalar(10, 255, 255), mask1_red);
+        cv::inRange(hsv_img_red, cv::Scalar(170, 120, 70), cv::Scalar(180, 255, 255), mask2_red);
 
-        combined_mask = mask1 | mask2;
+       // RCLCPP_ERROR(node_->get_logger(), "Point 4 ");
+
+
+        // Detect lower and upper ranges of green color
+        cv::inRange(hsv_img_green, cv::Scalar(35, 100, 100), cv::Scalar(50, 255, 255), mask1_green); // Low range
+        cv::inRange(hsv_img_green, cv::Scalar(50, 100, 100), cv::Scalar(85, 255, 255), mask2_green); // High range
+
+
+       // RCLCPP_ERROR(node_->get_logger(), "Point 5 ");
+
+
+        // Detect lower and upper ranges of blue color
+        cv::inRange(hsv_img_blue, cv::Scalar(100, 150, 0), cv::Scalar(120, 255, 255), mask1_blue); // Low range
+        cv::inRange(hsv_img_blue, cv::Scalar(120, 150, 0), cv::Scalar(140, 255, 255), mask2_blue); // High range
+
+
+      //  RCLCPP_ERROR(node_->get_logger(), "Point 6 ");
+
+
+        combined_mask_red = mask1_red | mask2_red;
+        combined_mask_green = mask1_green | mask2_green;
+        combined_mask_blue = mask1_blue | mask2_blue;
+
+
+       // RCLCPP_ERROR(node_->get_logger(), "Point 7 ");
+
 
         // Find contours in the mask
-        std::vector<std::vector<cv::Point>> contours;
-        cv::findContours(combined_mask, contours, cv::RETR_TREE, cv::CHAIN_APPROX_SIMPLE);
+        std::vector<std::vector<cv::Point>> contours_red;
+        std::vector<std::vector<cv::Point>> contours_green;
+        std::vector<std::vector<cv::Point>> contours_blue;
+
+        cv::findContours(combined_mask_red, contours_red, cv::RETR_TREE, cv::CHAIN_APPROX_SIMPLE);
+        cv::findContours(combined_mask_green, contours_green, cv::RETR_TREE, cv::CHAIN_APPROX_SIMPLE);
+        cv::findContours(combined_mask_blue, contours_blue, cv::RETR_TREE, cv::CHAIN_APPROX_SIMPLE);
+
+
+       // RCLCPP_ERROR(node_->get_logger(), "Point 8 ");
+
 
     //RCLCPP_WARN(node_->get_logger(), "Image callabck 2..");
 
 
-        if (!contours.empty()) {
+        if (!contours_red.empty() || !contours_green.empty() || !contours_blue.empty()) {
+
+
+         //   RCLCPP_ERROR(node_->get_logger(), "Point 9 ");
+
+            std::vector<cv::Point> largest_contour_red;
+            std::vector<cv::Point> largest_contour_green;
+            std::vector<cv::Point> largest_contour_blue;
+
+            
             // Find the largest contour based on area
-            auto largest_contour = *std::max_element(contours.begin(), contours.end(), [](auto &a, auto &b) {
-                return cv::contourArea(a) < cv::contourArea(b);
-            });
+            if(!contours_red.empty())
+            {
+              largest_contour_red = *std::max_element(contours_red.begin(), contours_red.end(), [](auto &a, auto &b) {
+                  return cv::contourArea(a) < cv::contourArea(b);
+              });
+            }
+
+          //  RCLCPP_ERROR(node_->get_logger(), "Point 10 ");
+
+            if(!contours_green.empty())
+            {
+
+              largest_contour_green = *std::max_element(contours_green.begin(), contours_green.end(), [](auto &c, auto &d) {
+                  return cv::contourArea(c) < cv::contourArea(d);
+              });
+            }
+
+          //  RCLCPP_ERROR(node_->get_logger(), "Point 11 ");
+
+
+            if(!contours_blue.empty())
+            {
+              largest_contour_blue = *std::max_element(contours_blue.begin(), contours_blue.end(), [](auto &e, auto &f) {
+                  return cv::contourArea(e) < cv::contourArea(f);
+              });
+
+            }
+
+
+         //   RCLCPP_ERROR(node_->get_logger(), "Point 12 ");
+
 
             // Calculate the centroid of the largest contour
-            cv::Moments m = cv::moments(largest_contour);
-            int cx = int(m.m10 / m.m00);
-            int cy = int(m.m01 / m.m00);
+            cv::Moments m_red = cv::moments(largest_contour_red);
+            cv::Moments m_green = cv::moments(largest_contour_green);
+            cv::Moments m_blue = cv::moments(largest_contour_blue);
+
+          //  RCLCPP_ERROR(node_->get_logger(), "Point 13 ");
+
+
+            // Get the area (m00) for each color
+            double area_red = m_red.m00;
+            double area_green = m_green.m00;
+            double area_blue = m_blue.m00;
+
+            // Determine the largest area
+            detected_color = "red";
+            double largest_area = 0.0;
+
+            if (area_red > area_green && area_red > area_blue) {
+                detected_color = "red";
+                largest_area = area_red;
+            } else if (area_green > area_red && area_green > area_blue) {
+                detected_color = "green";
+                largest_area = area_green;
+            } else if (area_blue > area_red && area_blue > area_green) {
+                detected_color = "blue";
+                largest_area = area_blue;
+            }
+
+            // Output the result
+            std::cout << "The largest region is: " << detected_color << " with an area of " << largest_area << std::endl;
+
+            int cx = 0;
+            int cy = 0;
+            if(detected_color == "red")
+            {
+
+              cx = int(m_red.m10 / m_red.m00);
+              cy = int(m_red.m01 / m_red.m00);
+            
+            }
+            else if(detected_color == "green")
+            {
+
+              cx = int(m_green.m10 / m_green.m00);
+              cy = int(m_green.m01 / m_green.m00);
+
+
+            }
+
+            else if (detected_color == "blue")
+            {
+
+              cx = int(m_blue.m10 / m_blue.m00);
+              cy = int(m_blue.m01 / m_blue.m00);
+
+
+            }
+            else
+            {
+                cx = 0;
+                cy = 0;
+
+
+            }
 
             // Draw a circle at the centroid
             cv::circle(img, cv::Point(cx, cy), 15, cv::Scalar(0, 255, 0), -1);
+            cv::putText(img, detected_color, cv::Point(640/2, 480/2), cv::FONT_HERSHEY_SIMPLEX, 2, cv::Scalar(255, 0, 0), 3);
 
             // Store centroid for 3D point extraction
             centroid_ = {cx, cy};
@@ -281,6 +426,12 @@ public:
         //cv::waitKey(1);
     }
 
+//Get detected color
+ std::string get_detect_color()
+ {
+
+    return detected_color;
+ }
 
 
 void addObstaclePlane(const std::string& plane_id, 
@@ -1076,6 +1227,8 @@ private:
 
   //Run on gazebo or real robot
   bool sim;
+
+  std::string detected_color;
 
 
 };
