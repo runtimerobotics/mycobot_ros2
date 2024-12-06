@@ -48,12 +48,26 @@
 
     <!-- Include the cylinder model -->
     <include>
-      <uri>model://hello_mtc_with_perception_cylinder</uri>
-      <name>hello_mtc_with_perception_cylinder</name>
+      <uri>model://hello_mtc_with_perception_cylinder_red</uri>
+      <name>hello_mtc_with_perception_cylinder_red</name>
       <pose>0.42 0.0 0.15 0 0 2.3</pose>
       <scale>1 1 1</scale>
     </include>  
 
+    <include>
+      <uri>model://hello_mtc_with_perception_cylinder_green</uri>
+      <name>hello_mtc_with_perception_cylinder_green</name>
+      <pose>0.52 1.0 0.15 0 0 2.3</pose>
+      <scale>1 1 1</scale>
+    </include>  
+
+
+    <include>
+      <uri>model://hello_mtc_with_perception_cylinder_blue</uri>
+      <name>hello_mtc_with_perception_cylinder_blue</name>
+      <pose>0.52 -1.0 0.15 0 0 2.3</pose>
+      <scale>1 1 1</scale>
+    </include>  
 
     <!-- Include a model of the Ground Plane from an external URI -->
     <include>
