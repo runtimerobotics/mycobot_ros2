@@ -295,7 +295,8 @@ public:
 
     //RCLCPP_WARN(node_->get_logger(), "Image callabck 2..");
 
-
+        // Determine the largest area
+        detected_color = "none";
         if (!contours_red.empty() || !contours_green.empty() || !contours_blue.empty()) {
 
 
@@ -352,8 +353,7 @@ public:
             double area_green = m_green.m00;
             double area_blue = m_blue.m00;
 
-            // Determine the largest area
-            detected_color = "red";
+
             double largest_area = 0.0;
 
             if (area_red > area_green && area_red > area_blue) {
@@ -1272,7 +1272,9 @@ int main(int argc, char* argv[])
 
     while (rclcpp::ok()) {
 
+      //if(move_obj.is_frame_available("goal_pose","g_base"))
       if(move_obj.is_frame_available("goal_pose","g_base"))
+
       {
 
         move_obj.move_home("home");
@@ -1330,37 +1332,70 @@ int main(int argc, char* argv[])
 
   while (rclcpp::ok()) {
 
+    if(move_obj.get_detect_color() != "none")
+    {
+
+      move_obj.move_home("home");
+      rclcpp::sleep_for(std::chrono::milliseconds(5000));
+      move_obj.move_gripper("open");
+      rclcpp::sleep_for(std::chrono::milliseconds(5000));
+      //Picking position
+      std::vector<double> joint_goal_degrees_pose1 = {24,-50,-63,-67,-156,135};
+      move_obj.move_abs_joints(joint_goal_degrees_pose1);
+      rclcpp::sleep_for(std::chrono::milliseconds(5000));
+      std::vector<double> joint_goal_degrees_pose2 = {21,-74,-13,-92,-159,135};
+      move_obj.move_abs_joints(joint_goal_degrees_pose2);
+      rclcpp::sleep_for(std::chrono::milliseconds(5000));
+      move_obj.move_gripper("open");
+      rclcpp::sleep_for(std::chrono::milliseconds(5000));
+      move_obj.move_gripper("half_close");
+      rclcpp::sleep_for(std::chrono::milliseconds(5000));
+      move_obj.move_home("home");
+      rclcpp::sleep_for(std::chrono::milliseconds(5000));
+      //Place position
+      if(move_obj.get_detect_color() == "red")
+      {
+        std::vector<double> joint_goal_degrees_pose3 = {-150,76,-11,116,30,135};
+      //std::vector<double> joint_goal_degrees_pose3 = {108,77,-8,112,-72,135}; //place 2
+        move_obj.move_abs_joints(joint_goal_degrees_pose3);
+        rclcpp::sleep_for(std::chrono::milliseconds(5000));
+        move_obj.move_gripper("open");
+        rclcpp::sleep_for(std::chrono::milliseconds(5000));
+      }
+      else if(move_obj.get_detect_color() == "green")
+      {
+
+        //std::vector<double> joint_goal_degrees_pose3 = {-150,76,-11,116,30,135};
+        std::vector<double> joint_goal_degrees_pose3 = {108,77,-8,112,-72,135}; //place 2
+        move_obj.move_abs_joints(joint_goal_degrees_pose3);
+        rclcpp::sleep_for(std::chrono::milliseconds(5000));
+        move_obj.move_gripper("open");
+        rclcpp::sleep_for(std::chrono::milliseconds(5000));
+
+      }
+      else if(move_obj.get_detect_color() == "blue")
+      {
+
+        std::vector<double> joint_goal_degrees_pose3 = {-115,75,25,-100,115,-47}; //place 2
+        move_obj.move_abs_joints(joint_goal_degrees_pose3);
+        rclcpp::sleep_for(std::chrono::milliseconds(5000));
+        move_obj.move_gripper("open");
+        rclcpp::sleep_for(std::chrono::milliseconds(5000));
 
 
-    move_obj.move_home("home");
-    rclcpp::sleep_for(std::chrono::milliseconds(5000));
-    move_obj.move_gripper("open");
-    rclcpp::sleep_for(std::chrono::milliseconds(5000));
-    //Picking position
-    std::vector<double> joint_goal_degrees_pose1 = {24,-50,-63,-67,-156,135};
-    move_obj.move_abs_joints(joint_goal_degrees_pose1);
-    rclcpp::sleep_for(std::chrono::milliseconds(5000));
-    std::vector<double> joint_goal_degrees_pose2 = {21,-74,-13,-92,-159,135};
-    move_obj.move_abs_joints(joint_goal_degrees_pose2);
-    rclcpp::sleep_for(std::chrono::milliseconds(5000));
-    move_obj.move_gripper("open");
-    rclcpp::sleep_for(std::chrono::milliseconds(5000));
-    move_obj.move_gripper("half_close");
-    rclcpp::sleep_for(std::chrono::milliseconds(5000));
-    move_obj.move_home("home");
-    rclcpp::sleep_for(std::chrono::milliseconds(5000));
-    //Place position
-    std::vector<double> joint_goal_degrees_pose3 = {-150,76,-11,116,30,135};
-    //std::vector<double> joint_goal_degrees_pose3 = {108,77,-8,112,-72,135}; //place 2
-
-    move_obj.move_abs_joints(joint_goal_degrees_pose3);
-    rclcpp::sleep_for(std::chrono::milliseconds(5000));
-    move_obj.move_gripper("open");
-    rclcpp::sleep_for(std::chrono::milliseconds(5000));
+      }
 
 
-  }
+    }
+    else
+    {
+      RCLCPP_ERROR(node->get_logger(), "Not detected any objects");
+      rclcpp::sleep_for(std::chrono::milliseconds(2000));
 
+
+    }
+
+   }
   }
 
   rclcpp::shutdown();
