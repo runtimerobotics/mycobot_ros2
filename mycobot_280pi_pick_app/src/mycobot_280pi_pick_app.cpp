@@ -235,19 +235,26 @@ public:
         cv::Mat hsv_img_red, mask1_red, mask2_red, combined_mask_red;
         cv::Mat hsv_img_green, mask1_green, mask2_green, combined_mask_green;
         cv::Mat hsv_img_blue, mask1_blue, mask2_blue, combined_mask_blue;
+        cv::Mat hsv_img_yellow, mask1_yellow, mask2_yellow, combined_mask_yellow;
 
 
        // RCLCPP_ERROR(node_->get_logger(), "Point 2 ");
 
-    //RCLCPP_WARN(node_->get_logger(), "Image callabck 1..");
+      //RCLCPP_WARN(node_->get_logger(), "Image callabck 1..");
 
         // Convert image to HSV format
         cv::cvtColor(img, hsv_img_red, cv::COLOR_BGR2HSV);
         cv::cvtColor(img, hsv_img_green, cv::COLOR_BGR2HSV);
         cv::cvtColor(img, hsv_img_blue, cv::COLOR_BGR2HSV);
+        cv::cvtColor(img, hsv_img_yellow, cv::COLOR_BGR2HSV);
 
 
        // RCLCPP_ERROR(node_->get_logger(), "Point 3 ");
+
+        // Detect lower and upper ranges of yellow color
+        cv::inRange(hsv_img_yellow, cv::Scalar(20, 100, 100), cv::Scalar(30, 255, 255), mask1_yellow); // Low range
+        cv::inRange(hsv_img_yellow, cv::Scalar(30, 100, 100), cv::Scalar(40, 255, 255), mask2_yellow); // High range
+
 
         // Detect lower and upper ranges of red color
         cv::inRange(hsv_img_red, cv::Scalar(0, 120, 70), cv::Scalar(10, 255, 255), mask1_red);
@@ -275,6 +282,7 @@ public:
         combined_mask_red = mask1_red | mask2_red;
         combined_mask_green = mask1_green | mask2_green;
         combined_mask_blue = mask1_blue | mask2_blue;
+        combined_mask_yellow = mask1_yellow | mask2_yellow;
 
 
        // RCLCPP_ERROR(node_->get_logger(), "Point 7 ");
@@ -284,10 +292,12 @@ public:
         std::vector<std::vector<cv::Point>> contours_red;
         std::vector<std::vector<cv::Point>> contours_green;
         std::vector<std::vector<cv::Point>> contours_blue;
+        std::vector<std::vector<cv::Point>> contours_yellow;
 
         cv::findContours(combined_mask_red, contours_red, cv::RETR_TREE, cv::CHAIN_APPROX_SIMPLE);
         cv::findContours(combined_mask_green, contours_green, cv::RETR_TREE, cv::CHAIN_APPROX_SIMPLE);
         cv::findContours(combined_mask_blue, contours_blue, cv::RETR_TREE, cv::CHAIN_APPROX_SIMPLE);
+        cv::findContours(combined_mask_yellow, contours_yellow, cv::RETR_TREE, cv::CHAIN_APPROX_SIMPLE);
 
 
        // RCLCPP_ERROR(node_->get_logger(), "Point 8 ");
@@ -297,7 +307,7 @@ public:
 
         // Determine the largest area
         detected_color = "none";
-        if (!contours_red.empty() || !contours_green.empty() || !contours_blue.empty()) {
+        if (!contours_red.empty() || !contours_green.empty() || !contours_blue.empty() || !contours_yellow.empty()) {
 
 
          //   RCLCPP_ERROR(node_->get_logger(), "Point 9 ");
@@ -305,6 +315,7 @@ public:
             std::vector<cv::Point> largest_contour_red;
             std::vector<cv::Point> largest_contour_green;
             std::vector<cv::Point> largest_contour_blue;
+            std::vector<cv::Point> largest_contour_yellow;
 
             
             // Find the largest contour based on area
@@ -337,6 +348,15 @@ public:
             }
 
 
+
+            if(!contours_yellow.empty())
+            {
+              largest_contour_yellow = *std::max_element(contours_yellow.begin(), contours_yellow.end(), [](auto &g, auto &h) {
+                  return cv::contourArea(g) < cv::contourArea(h);
+              });
+
+            }
+
          //   RCLCPP_ERROR(node_->get_logger(), "Point 12 ");
 
 
@@ -344,6 +364,7 @@ public:
             cv::Moments m_red = cv::moments(largest_contour_red);
             cv::Moments m_green = cv::moments(largest_contour_green);
             cv::Moments m_blue = cv::moments(largest_contour_blue);
+            cv::Moments m_yellow = cv::moments(largest_contour_yellow);
 
           //  RCLCPP_ERROR(node_->get_logger(), "Point 13 ");
 
@@ -352,20 +373,25 @@ public:
             double area_red = m_red.m00;
             double area_green = m_green.m00;
             double area_blue = m_blue.m00;
+            double area_yellow = m_yellow.m00;
 
 
             double largest_area = 0.0;
 
-            if (area_red > area_green && area_red > area_blue) {
+            if (area_red > area_green && area_red > area_blue && area_red > area_yellow) {
                 detected_color = "red";
                 largest_area = area_red;
-            } else if (area_green > area_red && area_green > area_blue) {
+            } else if (area_green > area_red && area_green > area_blue && area_green > area_yellow) {
                 detected_color = "green";
                 largest_area = area_green;
-            } else if (area_blue > area_red && area_blue > area_green) {
+            } else if (area_blue > area_red && area_blue > area_green && area_blue > area_yellow) {
                 detected_color = "blue";
                 largest_area = area_blue;
+            } else if (area_yellow > area_red && area_yellow > area_green && area_yellow > area_blue) {
+                detected_color = "yellow";
+                largest_area = area_yellow;
             }
+
 
             // Output the result
             std::cout << "The largest region is: " << detected_color << " with an area of " << largest_area << std::endl;
@@ -396,6 +422,15 @@ public:
 
 
             }
+            else if (detected_color == "yellow")
+            {
+
+              cx = int(m_yellow.m10 / m_yellow.m00);
+              cy = int(m_yellow.m01 / m_yellow.m00);
+
+
+            }
+
             else
             {
                 cx = 0;
@@ -1335,6 +1370,8 @@ int main(int argc, char* argv[])
     if(move_obj.get_detect_color() != "none")
     {
 
+      std::string detect_color = move_obj.get_detect_color();
+
       move_obj.move_home("home");
       rclcpp::sleep_for(std::chrono::milliseconds(5000));
       move_obj.move_gripper("open");
@@ -1353,7 +1390,7 @@ int main(int argc, char* argv[])
       move_obj.move_home("home");
       rclcpp::sleep_for(std::chrono::milliseconds(5000));
       //Place position
-      if(move_obj.get_detect_color() == "red")
+      if(detect_color == "red")
       {
         std::vector<double> joint_goal_degrees_pose3 = {-150,76,-11,116,30,135};
       //std::vector<double> joint_goal_degrees_pose3 = {108,77,-8,112,-72,135}; //place 2
@@ -1362,7 +1399,7 @@ int main(int argc, char* argv[])
         move_obj.move_gripper("open");
         rclcpp::sleep_for(std::chrono::milliseconds(5000));
       }
-      else if(move_obj.get_detect_color() == "green")
+      else if(detect_color == "green")
       {
 
         //std::vector<double> joint_goal_degrees_pose3 = {-150,76,-11,116,30,135};
@@ -1373,7 +1410,18 @@ int main(int argc, char* argv[])
         rclcpp::sleep_for(std::chrono::milliseconds(5000));
 
       }
-      else if(move_obj.get_detect_color() == "blue")
+      else if(detect_color == "blue")
+      {
+
+        std::vector<double> joint_goal_degrees_pose3 = {-115,75,25,-100,115,-47}; //place 2
+        move_obj.move_abs_joints(joint_goal_degrees_pose3);
+        rclcpp::sleep_for(std::chrono::milliseconds(5000));
+        move_obj.move_gripper("open");
+        rclcpp::sleep_for(std::chrono::milliseconds(5000));
+
+      }
+
+      else if(detect_color == "yellow")
       {
 
         std::vector<double> joint_goal_degrees_pose3 = {-115,75,25,-100,115,-47}; //place 2

@@ -69,6 +69,14 @@
       <scale>1 1 1</scale>
     </include>  
 
+
+    <include>
+      <uri>model://hello_mtc_with_perception_cylinder_yellow</uri>
+      <name>hello_mtc_with_perception_cylinder_yellow</name>
+      <pose>0.2 -1.0 0.15 0 0 0</pose>
+      <scale>1 1 1</scale>
+    </include>  
+
     <!-- Include a model of the Ground Plane from an external URI -->
     <include>
       <uri>
