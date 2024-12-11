@@ -1424,7 +1424,7 @@ int main(int argc, char* argv[])
       else if(detect_color == "yellow")
       {
 
-        std::vector<double> joint_goal_degrees_pose3 = {-115,75,25,-100,115,-47}; //place 2
+        std::vector<double> joint_goal_degrees_pose3 = {-85,-61,-32,-87,95,135}; //place 2
         move_obj.move_abs_joints(joint_goal_degrees_pose3);
         rclcpp::sleep_for(std::chrono::milliseconds(5000));
         move_obj.move_gripper("open");
