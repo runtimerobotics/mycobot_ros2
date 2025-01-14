@@ -1392,7 +1392,7 @@ int main(int argc, char* argv[])
       //Place position
       if(detect_color == "red")
       {
-        std::vector<double> joint_goal_degrees_pose3 = {-110,-1,60,118,30,135};
+        std::vector<double> joint_goal_degrees_pose3 = {-54,-1,60,118,30,135};
         //std::vector<double> joint_goal_degrees_pose3 = {-150,76,-11,116,30,135};
       //std::vector<double> joint_goal_degrees_pose3 = {108,77,-8,112,-72,135}; //place 2
         move_obj.move_abs_joints(joint_goal_degrees_pose3);
