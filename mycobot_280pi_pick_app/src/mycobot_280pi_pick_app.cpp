@@ -1392,7 +1392,7 @@ int main(int argc, char* argv[])
       //Place position
       if(detect_color == "red")
       {
-        std::vector<double> joint_goal_degrees_pose3 = {-54,-1,60,118,30,135};
+        std::vector<double> joint_goal_degrees_pose3 = {-146,100,-33,-66,144,-45};
         //std::vector<double> joint_goal_degrees_pose3 = {-150,76,-11,116,30,135};
       //std::vector<double> joint_goal_degrees_pose3 = {108,77,-8,112,-72,135}; //place 2
         move_obj.move_abs_joints(joint_goal_degrees_pose3);
@@ -1404,7 +1404,7 @@ int main(int argc, char* argv[])
       {
 
         //std::vector<double> joint_goal_degrees_pose3 = {-150,76,-11,116,30,135};
-        std::vector<double> joint_goal_degrees_pose3 = {-122,-1,60,118,30,135}; //place 2
+        std::vector<double> joint_goal_degrees_pose3 = {-100,118,-76,-42,97,-45}; //place 2
         move_obj.move_abs_joints(joint_goal_degrees_pose3);
         rclcpp::sleep_for(std::chrono::milliseconds(5000));
         move_obj.move_gripper("open");
@@ -1414,7 +1414,7 @@ int main(int argc, char* argv[])
       else if(detect_color == "blue")
       {
 
-        std::vector<double> joint_goal_degrees_pose3 = {144,41,19,117,30,135}; //place 2
+        std::vector<double> joint_goal_degrees_pose3 = {105,67,36,-104,-107,-45}; //place 2
         move_obj.move_abs_joints(joint_goal_degrees_pose3);
         rclcpp::sleep_for(std::chrono::milliseconds(5000));
         move_obj.move_gripper("open");
@@ -1425,7 +1425,7 @@ int main(int argc, char* argv[])
       else if(detect_color == "yellow")
       {
 
-        std::vector<double> joint_goal_degrees_pose3 = {92,41,19,117,30,135}; //place 2
+        std::vector<double> joint_goal_degrees_pose3 = {52,39,72,-110,-55,-45}; //place 2
         move_obj.move_abs_joints(joint_goal_degrees_pose3);
         rclcpp::sleep_for(std::chrono::milliseconds(5000));
         move_obj.move_gripper("open");
